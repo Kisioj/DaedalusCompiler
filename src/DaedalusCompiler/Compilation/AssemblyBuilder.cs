@@ -286,6 +286,7 @@ namespace DaedalusCompiler.Compilation
         private int _labelIndexGenerator;
         private int _nextStringSymbolNumber;
         public bool IsInsideEvalableStatement;
+        public bool IsCurrentlyParsingExternals;
 
         public AssemblyBuilder()
         {
@@ -299,6 +300,7 @@ namespace DaedalusCompiler.Compilation
             _labelIndexGenerator = 0;
             _nextStringSymbolNumber = 10000;
             IsInsideEvalableStatement = false;
+            IsCurrentlyParsingExternals = false;
         }
 
         public string NewStringSymbolName()
@@ -560,6 +562,19 @@ namespace DaedalusCompiler.Compilation
 
         public void AddSymbol(DatSymbol symbol)
         {
+            if (IsCurrentlyParsingExternals)
+            {
+                if (symbol.Type == DatSymbolType.Func)
+                {
+                    symbol.Flags |= DatSymbolFlag.External;
+                }
+
+                if (symbol.Name == "instance_help")
+                {
+                    symbol.Name = $"{(char) 255}instance_help";
+                }
+            }
+                
             if (symbol.Name.StartsWith($"{(char) 255}") && symbol.Type == DatSymbolType.String &&
                 symbol.Flags == DatSymbolFlag.Const)
             {
@@ -587,12 +602,12 @@ namespace DaedalusCompiler.Compilation
 
                     if (symbol == null)
                     {
-                        if (currentExecBlockSymbol.Parent == -1)
+                        if (currentExecBlockSymbol.ParentIndex == -1)
                         {
                             break;
                         }
 
-                        currentExecBlockSymbol = Symbols[currentExecBlockSymbol.Parent];
+                        currentExecBlockSymbol = Symbols[currentExecBlockSymbol.ParentIndex];
                     }
                     else
                     {

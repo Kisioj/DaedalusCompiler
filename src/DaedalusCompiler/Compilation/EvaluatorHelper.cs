@@ -98,6 +98,9 @@ namespace DaedalusCompiler.Compilation
 
             if (expression is DaedalusParser.EqExpressionContext)
                 return EvaluateIntBinaryExpression(expression, assemblyBuilder);
+            
+            if (expression is DaedalusParser.BinOrExpressionContext)
+                return EvaluateIntBinaryExpression(expression, assemblyBuilder);
 
             throw new Exception(
                 $"Unable to evaluate constant. Expression '{expression.GetText()}' contains unsupported operations.");

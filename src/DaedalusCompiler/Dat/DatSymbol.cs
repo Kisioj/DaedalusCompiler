@@ -55,17 +55,17 @@ namespace DaedalusCompiler.Dat
         /// <summary>
         /// Return type which is set only for 'func' symbols with 'return' flag set
         /// </summary>
-        public DatSymbolType? ReturnType { get; set; }
+        public DatSymbolType ReturnType { get; set; }
 
         /// <summary>
         /// Addres of parent 'class' symbol set only for 'classvar' symbol.
         /// </summary>
-        public int? ClassVarOffset { get; set; }
+        public int ClassVarOffset { get; set; }
 
         /// <summary>
         /// Fields count which is set only for 'class' symbol
         /// </summary>
-        public int? ClassSize { get; set; }
+        public int ClassSize { get; set; }
 
         /// <summary>
         /// Specifies where symbol is located in source scripts
@@ -76,12 +76,32 @@ namespace DaedalusCompiler.Dat
         /// Content of const variable or array
         /// </summary>
         public object[] Content { get; set; }
+        
+        /// <summary>
+        /// Address of first token. Only set for 'function', 'instance' and 'prototype' symbols.
+        /// </summary>
+        public int FirstTokenAddress  { get; set; }
+        
+        /// <summary>
+        /// Only set for 'class' symbol.
+        /// </summary>
+        public int ClassOffset  { get; set; }
 
         /// <summary>
         /// Reference to parent symbol for nested symbols like class variables
         /// </summary>
-        public int Parent { get; set; }
+        public int ParentIndex { get; set; }
 
+        public DatSymbol()
+        {
+            ClassOffset = -9;
+            FirstTokenAddress = -9;
+            ParentIndex = -9;
+            ClassSize = -9;
+            ClassVarOffset = -9;
+            ReturnType = DatSymbolType.Void;
+        }
+        
         /// <summary>
         /// Saves DatSymbol to binary stream using DAT format 
         /// </summary>
@@ -97,15 +117,15 @@ namespace DaedalusCompiler.Dat
             // Save ReturnType / ClassSize / ClassVarOffset
             if (Type == DatSymbolType.Func && Flags.HasFlag(DatSymbolFlag.Return))
             {
-                writer.Write((int)ReturnType.Value);
-            }
-            else if (Type == DatSymbolType.Class)
-            {
-                writer.Write(ClassSize.Value);
+                writer.Write((int)ReturnType);
             }
             else if (Flags.HasFlag(DatSymbolFlag.Classvar))
             {
-                writer.Write(ClassVarOffset.Value);
+                writer.Write(ClassVarOffset);
+            }
+            else if (Type == DatSymbolType.Class)
+            {
+                writer.Write(ClassSize);
             }
             else
             {
@@ -120,32 +140,53 @@ namespace DaedalusCompiler.Dat
             bitField |= 0x400000;
             writer.Write(bitField);
 
-            // Save localization data
+            
             writer.Write(Location.FileNumber);
             writer.Write(Location.Line);
             writer.Write(Location.LinesCount);
             writer.Write(Location.Position);
             writer.Write(Location.PositionsCount);
 
-            //Save content
-            foreach(var obj in Content ?? Enumerable.Empty<object>())
+            if (!Flags.HasFlag(DatSymbolFlag.Classvar))
             {
                 switch (Type)
                 {
-                    case DatSymbolType.String:
-                        writer.Write((string)obj);
+                    case DatSymbolType.Class:
+                        writer.Write(ClassOffset);
                         break;
-                    case DatSymbolType.Float:
-                        writer.Write(Convert.ToSingle(obj));
+                
+                    case DatSymbolType.Func:
+                    case DatSymbolType.Instance:
+                    case DatSymbolType.Prototype:
+                        writer.Write(FirstTokenAddress);
                         break;
+                
                     default:
-                        writer.Write((int)obj);
+                        foreach(var obj in Content ?? Enumerable.Empty<object>())
+                        {
+                            switch (Type)
+                            {
+                                case DatSymbolType.String:
+                                    writer.Write((string)obj);
+                                    break;
+                                case DatSymbolType.Float:
+                                    writer.Write(Convert.ToSingle(obj));
+                                    break;
+                                default:
+                                    writer.Write((int)obj);
+                                    break;
+                            }
+                        }
                         break;
                 }
             }
+            
+            
+            
+                    
 
             // Save parent
-            writer.Write(Parent);
+            writer.Write(ParentIndex);
         }
 
         /// <summary>
@@ -185,7 +226,6 @@ namespace DaedalusCompiler.Dat
                 symbol.ClassVarOffset = valueField;
             }
 
-            // Read Location
             symbol.Location = new DatSymbolLocation
             {
                 FileNumber = reader.ReadInt32(),
@@ -196,11 +236,24 @@ namespace DaedalusCompiler.Dat
             };
 
 
-            // Read Content (if exists)
-            symbol.Content = GetContentIfExists(reader, symbol);
-
-            // Read Parent
-            symbol.Parent = reader.ReadInt32();
+            switch (symbol.Type)
+            {
+                case DatSymbolType.Class:
+                    symbol.ClassOffset = reader.ReadInt32();
+                    break;
+                
+                case DatSymbolType.Func:
+                case DatSymbolType.Instance:
+                case DatSymbolType.Prototype:
+                    symbol.FirstTokenAddress = reader.ReadInt32();
+                    break;
+                
+                default:
+                    symbol.Content = GetContentIfExists(reader, symbol);
+                    break;
+            }
+            
+            symbol.ParentIndex = reader.ReadInt32();
 
             return symbol;
         }

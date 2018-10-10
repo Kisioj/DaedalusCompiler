@@ -16,7 +16,7 @@ Prototype: 'prototype' | 'PROTOTYPE';
 Instance: 'instance' | 'INSTANCE';
 Null: 'null' | 'Null';
 
-Identifier : [a-zA-Z_] ([0-9] | [a-zA-Z_])*;
+Identifier : [äa-zA-Z_][äa-zA-Z0-9_]*;
 IntegerLiteral : [0-9]+;
 FloatLiteral : [0-9]+ '.' [0-9]+;
 StringLiteral : '"' (~["\\\r\n] | '\\' (. | EOF))* '"';

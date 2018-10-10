@@ -9,6 +9,7 @@ namespace DaedalusCompiler.Compilation
     {
         public static IEnumerable<string> LoadScriptsFilePaths(string srcFilePath)
         {
+            Path.GetFileName(srcFilePath);
             return LoadScriptsFilePaths(srcFilePath, new List<string>());
         }
 

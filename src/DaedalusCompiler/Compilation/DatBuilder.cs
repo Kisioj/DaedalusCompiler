@@ -127,7 +127,11 @@ namespace DaedalusCompiler.Compilation
             List<DatToken> tokens = new List<DatToken>();
             foreach (var execBlock in _execBlocks)
             {
-                execBlock.Symbol.Content = new object[] {_currentAddress};
+                if (execBlock.Symbol.Flags.HasFlag(DatSymbolFlag.External))
+                {
+                    continue;
+                }
+                execBlock.Symbol.FirstTokenAddress = _currentAddress;
                 tokens.AddRange(GetTokens(execBlock));
             }
 

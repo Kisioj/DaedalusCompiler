@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using DaedalusCompiler.Compilation;
 using DaedalusCompiler.Dat;
+using DaedalusCompiler;
+using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Xunit;
 
 namespace DaedalusCompiler.Tests
