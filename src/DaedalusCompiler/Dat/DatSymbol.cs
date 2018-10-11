@@ -32,6 +32,13 @@ namespace DaedalusCompiler.Dat
     [DebuggerDisplay("{Type} {ReturnType} {Name} '{Flags}'")]
     public class DatSymbol
     {
+       
+        /// <summary>
+        /// Symbol's index, id. It shows how many symbols were loaded before this one.
+        /// </summary>
+        public int Index { get; set; }
+
+        
         /// <summary>
         /// Symbol name like C_MISSION.RUNNING, C_ITEM, MAX_WISPSKILL
         /// </summary>
@@ -41,6 +48,11 @@ namespace DaedalusCompiler.Dat
         /// Length for array variables or constants. Set to 1 for non array variables or constants
         /// </summary>
         public uint ArrayLength { get; set; }
+        
+        /// <summary>
+        /// Only for functions
+        /// </summary>
+        public uint ParametersCount { get; set; }
 
         /// <summary>
         /// Symbol type ex. 'class' or 'func'
@@ -93,7 +105,9 @@ namespace DaedalusCompiler.Dat
         public int ParentIndex { get; set; }
 
         public DatSymbol()
-        {
+        {          
+            ArrayLength = 0;
+            ParametersCount = 0;
             ClassOffset = -9;
             FirstTokenAddress = -9;
             ParentIndex = -9;
@@ -134,7 +148,15 @@ namespace DaedalusCompiler.Dat
 
             // Save ArrayLength & Type & Flags
             var bitField = 0u;
-            bitField |= ArrayLength;
+            if (Type == DatSymbolType.Func)
+            {
+                bitField |= ParametersCount;
+            }
+            else
+            {
+                bitField |= ArrayLength;
+            }
+            
             bitField |= ((uint)Type << 12);
             bitField |= ((uint)Flags << 16);
             bitField |= 0x400000;
@@ -147,7 +169,7 @@ namespace DaedalusCompiler.Dat
             writer.Write(Location.Position);
             writer.Write(Location.PositionsCount);
 
-            if (!Flags.HasFlag(DatSymbolFlag.Classvar))
+            if (!Flags.Equals(0) && !Flags.HasFlag(DatSymbolFlag.Classvar))
             {
                 switch (Type)
                 {

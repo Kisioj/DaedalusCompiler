@@ -26,6 +26,12 @@ namespace DaedalusCompiler.Tests
             _parsed = false;
         }
 
+        private int RefIndex(string symbolName)
+        {
+            DatSymbol symbol = _assemblyBuilder.ResolveSymbol(symbolName);
+            return symbol.Index;
+        }
+        
         private DatSymbol Ref(string symbolName)
         {
             return _assemblyBuilder.ResolveSymbol(symbolName);
@@ -67,11 +73,12 @@ namespace DaedalusCompiler.Tests
 
         private void AssertSymbolsMatch()
         {
-            Assert.Equal(_expectedSymbols.Count, _assemblyBuilder.GetAllSymbols().Count);
+            Assert.Equal(_expectedSymbols.Count, _assemblyBuilder.Symbols.Count);
             for (var index = 0; index < _expectedSymbols.Count; index++)
             {
-                var symbol = _assemblyBuilder.GetAllSymbols()[index];
+                var symbol = _assemblyBuilder.Symbols[index];
                 var expectedSymbol = _expectedSymbols[index];
+                Assert.Equal(index, symbol.Index);
                 Assert.Equal(expectedSymbol, symbol);
             }
         }
@@ -2173,6 +2180,326 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc"),
             };
             AssertSymbolsMatch();
+        }
+        [Fact]
+        public void TestFuncCalls()
+        {
+            _code = @"
+                class person {
+                    var int age;
+                };
+                
+                func void firstFunc (var person par) {};
+                func void secondFunc (var int par) {};
+                func void thirdFunc (var float par) {};
+                func void fourthFunc (var string par) {};
+                
+                var person a;
+                var int b;
+                var float c;
+                var string d;
+                
+                func void testFunc () {
+                    var person e;
+                    var int f;
+                    var float g;
+                    var string h;
+                    
+                    firstFunc(a);
+                    //firstFunc(b);
+                    //firstFunc(c);
+                    //firstFunc(d);
+                    firstFunc(e);
+                    //firstFunc(f);
+                    //firstFunc(g);
+                    //firstFunc(h);
+                        
+                    secondFunc(a);
+                    secondFunc(b);
+                    //secondFunc(c);
+                    //secondFunc(d);
+                    secondFunc(e);
+                    secondFunc(f);
+                    //secondFunc(g);
+                    //secondFunc(h);
+                    
+                    
+                    //thirdFunc(a);
+                    //thirdFunc(b);
+                    thirdFunc(c);
+                    //thirdFunc(d);
+                    //thirdFunc(e);
+                    //thirdFunc(f);
+                    thirdFunc(g);
+                    //thirdFunc(h);
+                    
+                    //fourthFunc(a);
+                    //fourthFunc(b);
+                    //fourthFunc(c);
+                    fourthFunc(d);
+                    //fourthFunc(e);
+                    //fourthFunc(f);
+                    //fourthFunc(g);
+                    fourthFunc(h);
+                    
+                };
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushInstance(Ref("firstFunc.par")),
+                new AssignInstance(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("secondFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("secondFunc.par")),
+                new Assign(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("thirdFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("thirdFunc.par")),
+                new AssignFloat(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("fourthFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("fourthFunc.par")),
+                new AssignString(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushInstance(Ref("a")),
+                new Call(Ref("firstFunc")),
+                new PushInstance(Ref("testFunc.e")),
+                new Call(Ref("firstFunc")),
+                
+                new PushInt(RefIndex("a")),
+                new Call(Ref("secondFunc")),
+                new PushVar(Ref("b")),
+                new Call(Ref("secondFunc")),
+                
+                new PushInt(RefIndex("testFunc.e")),
+                new Call(Ref("secondFunc")),
+                new PushVar(Ref("testFunc.f")),
+                new Call(Ref("secondFunc")),
+                
+                new PushVar(Ref("c")),
+                new Call(Ref("thirdFunc")),
+                new PushVar(Ref("testFunc.g")),
+                new Call(Ref("thirdFunc")),
+                
+                new PushVar(Ref("d")),
+                new Call(Ref("fourthFunc")),
+                new PushVar(Ref("testFunc.h")),
+                new Call(Ref("fourthFunc")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("person"),
+                Ref("person.age"),
+                Ref("firstFunc"),
+                Ref("firstFunc.par"),
+                Ref("secondFunc"),
+                Ref("secondFunc.par"),
+                Ref("thirdFunc"),
+                Ref("thirdFunc.par"),
+                Ref("fourthFunc"),
+                Ref("fourthFunc.par"),
+                Ref("a"),
+                Ref("b"),
+                Ref("c"),
+                Ref("d"),
+                Ref("testFunc"),
+                Ref("testFunc.e"),
+                Ref("testFunc.f"),
+                Ref("testFunc.g"),
+                Ref("testFunc.h"),
+            };
+            AssertSymbolsMatch();
+        }
+        
+        [Fact]
+        public void TestMultiparameterFuncCall()
+        {
+            _code = @"
+                class person {
+                    var int age;
+                };
+                
+                var person a;
+                var int b;
+                var float c;
+                var string d;
+                
+                
+                func void firstFunc (var person par0, var int par1, var float par2, var string par3, var person par4) {};
+                
+                func void testFunc () {
+                    firstFunc(a, a, c, d, a);
+                    firstFunc(a, b, c, d, a);
+                };
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushInstance(Ref("firstFunc.par4")),
+                new AssignInstance(),
+                
+                new PushVar(Ref("firstFunc.par3")),
+                new AssignString(),
+                
+                new PushVar(Ref("firstFunc.par2")),
+                new AssignFloat(),
+                
+                new PushVar(Ref("firstFunc.par1")),
+                new Assign(),
+                
+                new PushInstance(Ref("firstFunc.par0")),
+                new AssignInstance(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushInstance(Ref("a")),
+                new PushInt(RefIndex("a")),
+                new PushVar(Ref("c")),
+                new PushVar(Ref("d")),
+                new PushInstance(Ref("a")),
+                new Call(Ref("firstFunc")),
+                
+                new PushInstance(Ref("a")),
+                new PushVar(Ref("b")),
+                new PushVar(Ref("c")),
+                new PushVar(Ref("d")),
+                new PushInstance(Ref("a")),
+                new Call(Ref("firstFunc")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("person"),
+                Ref("person.age"),
+                Ref("a"),
+                Ref("b"),
+                Ref("c"),
+                Ref("d"),
+                Ref("firstFunc"),
+                Ref("firstFunc.par0"),
+                Ref("firstFunc.par1"),
+                Ref("firstFunc.par2"),
+                Ref("firstFunc.par3"),
+                Ref("firstFunc.par4"),
+                Ref("testFunc"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        [Fact]
+        public void TestFunctionArgumentsLazyReference()
+        {
+            _code = @"
+                class person {
+                    var int age;
+                };
+                
+                func void firstFunc (var int par) {};
+                func void secondFunc (var person par) {};
+    
+                func void testFunc () {
+                    firstFunc(a);
+                    firstFunc(b);
+                    firstFunc(8);
+
+                    secondFunc(a);
+                };
+                
+                var person a;
+                var int b;
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("firstFunc.par")),
+                new Assign(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("secondFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushInstance(Ref("secondFunc.par")),
+                new AssignInstance(),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {              
+                new PushInt(RefIndex("a")),
+                new Call(Ref("firstFunc")),
+                new PushVar(Ref("b")),
+                new Call(Ref("firstFunc")),
+                new PushInt(8),
+                new Call(Ref("firstFunc")),
+                
+                new PushInstance(Ref("a")),
+                new Call(Ref("secondFunc")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("person"),
+                Ref("person.age"),
+                Ref("firstFunc"),
+                Ref("firstFunc.par"),
+                Ref("secondFunc"),
+                Ref("secondFunc.par"),
+                Ref("testFunc"),
+                Ref("a"),
+                Ref("b"),
+            };
+            AssertSymbolsMatch(); 
         }
     }
 }

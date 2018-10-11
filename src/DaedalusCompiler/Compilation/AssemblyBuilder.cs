@@ -246,13 +246,42 @@ namespace DaedalusCompiler.Compilation
         }
     }
 
-    public abstract class CallExternal : SymbolInstruction
+    public class CallExternal : SymbolInstruction
     {
-        protected CallExternal(DatSymbol symbol) : base(symbol)
+        public CallExternal(DatSymbol symbol) : base(symbol)
         {
         }
     }
 
+    public class LazyComplexReferenceNodeInstructions : AssemblyInstruction
+    {
+        private readonly DatSymbolType _parameterType;
+        private readonly ExecBlock _execBlock;
+        private readonly DaedalusParserListener _parserListener;
+        private readonly DaedalusParser.ComplexReferenceNodeContext[] _complexReferenceNodes;
+        
+        
+        public LazyComplexReferenceNodeInstructions(
+            AssemblyBuilder assemblyBuilder,
+            DaedalusParserListener parserListener,
+            DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
+        {
+            _parameterType = assemblyBuilder.ParametersTypes[assemblyBuilder.ArgIndex];
+            _execBlock = assemblyBuilder.ActiveExecBlock;
+            _parserListener = parserListener;
+            _complexReferenceNodes = complexReferenceNodes;
+        }
+        
+        public List<AssemblyInstruction> Evaluate()
+        {
+            return _parserListener.GetComplexReferenceNodeInstructions(
+                _complexReferenceNodes,
+                isInsideArgList:true,
+                parameterType:_parameterType,
+                execBlock:_execBlock);
+        }
+    }
+    
     public class AssemblyBuildContext
     {
         public AssemblyOperatorStatement CurrentOperatorStatement;
@@ -277,9 +306,9 @@ namespace DaedalusCompiler.Compilation
     public class AssemblyBuilder
     {
         public readonly List<ExecBlock> ExecBlocks;
-        public readonly List<DatSymbol> Symbols;
+        public List<DatSymbol> Symbols;
         private readonly List<DatSymbol> _stringLiteralSymbols;
-        private ExecBlock _active;
+        public ExecBlock ActiveExecBlock;
         private AssemblyBuildContext _currentBuildCtx;
         private List<SymbolInstruction> _assignmentLeftSide;
         private FuncArgsBodyContext _funcArgsBodyCtx;
@@ -288,21 +317,44 @@ namespace DaedalusCompiler.Compilation
         public bool IsInsideEvalableStatement;
         public bool IsCurrentlyParsingExternals;
 
+        public bool IsInsideArgList;
+        public List<DatSymbolType> ParametersTypes;
+        public int ArgIndex;
+        private int _nextSymbolIndex;
+
         public AssemblyBuilder()
         {
             ExecBlocks = new List<ExecBlock>();
             Symbols = new List<DatSymbol>();
             _stringLiteralSymbols = new List<DatSymbol>();
             _currentBuildCtx = GetEmptyBuildContext();
-            _active = null;
+            ActiveExecBlock = null;
             _assignmentLeftSide = new List<SymbolInstruction>();
             _funcArgsBodyCtx = new FuncArgsBodyContext(null);
             _labelIndexGenerator = 0;
             _nextStringSymbolNumber = 10000;
             IsInsideEvalableStatement = false;
             IsCurrentlyParsingExternals = false;
+            
+            IsInsideArgList = false;
+            ParametersTypes = new List<DatSymbolType>();
+            ArgIndex = -1;
+            _nextSymbolIndex = 0;
         }
 
+        public DatSymbolType GetParameterType()
+        {
+            try
+            {
+                return ParametersTypes[ArgIndex];
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                Console.WriteLine("Hello");
+                return ParametersTypes[ArgIndex];
+            }
+        }
+        
         public string NewStringSymbolName()
         {
             return $"{(char) 255}{_nextStringSymbolNumber++}";
@@ -310,12 +362,7 @@ namespace DaedalusCompiler.Compilation
 
         public DatSymbol GetCurrentSymbol()
         {
-            return _active.Symbol;
-        }
-
-        public List<DatSymbol> GetAllSymbols()
-        {
-            return Symbols.Concat(_stringLiteralSymbols).ToList();
+            return ActiveExecBlock.Symbol;
         }
 
         private AssemblyBuildContext GetEmptyBuildContext(bool isOperatorContext = false)
@@ -332,7 +379,7 @@ namespace DaedalusCompiler.Compilation
 
         public bool IsContextInsideExecBlock()
         {
-            return _active != null;
+            return ActiveExecBlock != null;
         }
 
         public void AddInstruction(AssemblyInstruction instruction)
@@ -351,26 +398,26 @@ namespace DaedalusCompiler.Compilation
             {
                 case ExecutebleBlockType.Function:
                     var function = new FunctionBlock {Symbol = symbol};
-                    _active = function;
+                    ActiveExecBlock = function;
                     break;
                 case ExecutebleBlockType.InstanceConstructor:
                     var instanceConstructor = new InstanceConstructorBlock {Symbol = symbol};
-                    _active = instanceConstructor;
+                    ActiveExecBlock = instanceConstructor;
                     break;
                 case ExecutebleBlockType.PrototypeConstructor:
                     var prototypeConstructor = new PrototypeContructorBlock {Symbol = symbol};
-                    _active = prototypeConstructor;
+                    ActiveExecBlock = prototypeConstructor;
                     break;
             }
 
-            ExecBlocks.Add(_active);
+            ExecBlocks.Add(ActiveExecBlock);
             _currentBuildCtx = GetEmptyBuildContext();
         }
 
         public void ExecBlockEnd()
         {
-            _active.Body = _currentBuildCtx.Body;
-            _active = null;
+            ActiveExecBlock.Body = _currentBuildCtx.Body;
+            ActiveExecBlock = null;
 
             _currentBuildCtx = _currentBuildCtx.Parent;
         }
@@ -410,6 +457,7 @@ namespace DaedalusCompiler.Compilation
         public void FuncCallArgStart()
         {
             _currentBuildCtx = GetEmptyBuildContext();
+            ArgIndex++;
         }
 
         public void FuncCallArgEnd()
@@ -421,6 +469,9 @@ namespace DaedalusCompiler.Compilation
         public void FuncCallStart()
         {
             _funcArgsBodyCtx = new FuncArgsBodyContext(_funcArgsBodyCtx);
+
+            IsInsideArgList = true;
+            
         }
 
         public void FuncCallEnd(AssemblyElement instruction)
@@ -430,6 +481,10 @@ namespace DaedalusCompiler.Compilation
             _currentBuildCtx.Body.Add(instruction);
 
             _funcArgsBodyCtx = _funcArgsBodyCtx.Parent;
+            
+            IsInsideArgList = false;
+            ParametersTypes = new List<DatSymbolType>();
+            ArgIndex = -1;
         }
 
         public void ExpressionEnd(AssemblyInstruction operatorInstruction)
@@ -583,22 +638,29 @@ namespace DaedalusCompiler.Compilation
             else
             {
                 Symbols.Add(symbol);
+                symbol.Index = _nextSymbolIndex;
+                _nextSymbolIndex++;
             }
         }
 
         public DatSymbol ResolveSymbol(string symbolName)
         {
+            return ResolveSymbol(symbolName, ActiveExecBlock);
+        }
+        
+        public DatSymbol ResolveSymbol(string symbolName, ExecBlock execBlock)
+        {
             DatSymbol symbol;
 
-            if (_active != null && !symbolName.Contains("."))
+            if (execBlock != null && !symbolName.Contains("."))
             {
-                DatSymbol currentExecBlockSymbol = _active.Symbol;
+                DatSymbol currentExecBlockSymbol = execBlock.Symbol;
 
                 while (currentExecBlockSymbol != null)
                 {
                     var targetSymbolName = $"{currentExecBlockSymbol.Name}.{symbolName}";
 
-                    symbol = GetAllSymbols().Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
+                    symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
 
                     if (symbol == null)
                     {
@@ -616,7 +678,7 @@ namespace DaedalusCompiler.Compilation
                 }
             }
 
-            symbol = GetAllSymbols().Find(x => x.Name.ToUpper() == symbolName.ToUpper());
+            symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
 
             if (symbol == null)
             {
@@ -628,12 +690,7 @@ namespace DaedalusCompiler.Compilation
 
         public DatSymbol GetSymbolByName(string symbolName)
         {
-            return GetAllSymbols().FirstOrDefault(x => x.Name.ToUpper() == symbolName.ToUpper());
-        }
-
-        public int GetSymbolId(DatSymbol symbol)
-        {
-            return GetAllSymbols().IndexOf(symbol);
+            return Symbols.FirstOrDefault(x => x.Name.ToUpper() == symbolName.ToUpper());
         }
 
         private string GetNextLabel()
@@ -709,6 +766,44 @@ namespace DaedalusCompiler.Compilation
             DatBuilder datBuilder = new DatBuilder(this);
             DatFile datFile = datBuilder.GetDatFile();
             datFile.Save("./test.dat");
+        }
+
+        public void Finish()
+        {
+            foreach (DatSymbol symbol in _stringLiteralSymbols)
+            {
+                symbol.Index = _nextSymbolIndex;
+                _nextSymbolIndex++;
+            }
+            Symbols = Symbols.Concat(_stringLiteralSymbols).ToList();
+            
+            foreach (ExecBlock execBlock in ExecBlocks)
+            {
+                for (int i = 0; i < execBlock.Body.Count; ++i)
+                {
+                    AssemblyElement element = execBlock.Body[i];
+                    if (element is LazyComplexReferenceNodeInstructions)
+                    {
+                        List<AssemblyInstruction> instructions = ((LazyComplexReferenceNodeInstructions) element).Evaluate();
+                        execBlock.Body.RemoveAt(i);
+                        execBlock.Body.InsertRange(i, instructions);
+                    }
+                }
+                
+                /*
+                
+                if (execBlock.Symbol.Flags.HasFlag(DatSymbolFlag.External))
+                {
+                    continue;
+                }
+                execBlock.Symbol.FirstTokenAddress = _currentAddress;
+                tokens.AddRange(GetTokens(execBlock));
+                */
+            }
+                
+            /*
+             resolve references
+             */
         }
     }
 }

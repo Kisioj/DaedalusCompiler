@@ -110,7 +110,7 @@ namespace DaedalusCompiler.Compilation
                 FirstTokenAddress = -1,
                 ReturnType = returnType,
                 ParentIndex = -1,
-                ArrayLength = parametersCount,
+                ParametersCount = parametersCount,
             };
 
             return symbol;
