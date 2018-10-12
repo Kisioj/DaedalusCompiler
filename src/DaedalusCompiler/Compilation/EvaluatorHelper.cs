@@ -129,7 +129,15 @@ namespace DaedalusCompiler.Compilation
                     if (referenceSymbol == null)
                         throw new Exception($"Reference symbol {referenceName} is not declared.");
 
-                    var referenceValue = referenceSymbol.Content.First();
+                    object referenceValue;
+                    if (referenceSymbol.Type == DatSymbolType.Func)
+                    {
+                        referenceValue = referenceSymbol.Index;
+                    }
+                    else
+                    {
+                        referenceValue = referenceSymbol.Content.First();
+                    }
 
                     if (referenceValue is int == false)
                         throw new Exception(

@@ -96,6 +96,10 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideEvalableStatement = true;
             var typeName = context.typeReference().GetText();
             var type = DatSymbolTypeFromString(typeName);
+            if (type == DatSymbolType.Func)
+            {
+                type = DatSymbolType.Int;
+            }
 
             for (int i = 0; i < context.ChildCount; i++)
             {

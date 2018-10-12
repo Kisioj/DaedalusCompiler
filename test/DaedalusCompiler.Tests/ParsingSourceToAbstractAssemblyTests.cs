@@ -2822,5 +2822,32 @@ namespace DaedalusCompiler.Tests
             };
             AssertSymbolsMatch(); 
         }
+        
+        
+        [Fact]
+        public void TestConstFunc()
+        {
+            _code = @"
+                func int intFunc(var int par) {
+                    return 0;
+                };
+                func void voidFunc() {};
+                
+                const func constIntFunc = intFunc; 
+                const func constVoidFunc = voidFunc;
+            ";
+            ParseData();
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("intFunc"),
+                Ref("intFunc.par"),
+                Ref("voidFunc"),
+                Ref("constIntFunc"),
+                Ref("constVoidFunc"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
     }
 }
