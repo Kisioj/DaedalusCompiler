@@ -398,9 +398,15 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.ConditionalBlockBodyEnd();
         }
 
+        public override void EnterIfCondition(DaedalusParser.IfConditionContext context)
+        {
+            _assemblyBuilder.IsInsideIfCondition = true;
+        }
+        
         public override void ExitIfCondition(DaedalusParser.IfConditionContext context)
         {
             _assemblyBuilder.ConditionalBlockConditionEnd();
+            _assemblyBuilder.IsInsideIfCondition = false;
         }
 
         public override void EnterBitMoveOperator(DaedalusParser.BitMoveOperatorContext context)
@@ -459,6 +465,7 @@ namespace DaedalusCompiler.Compilation
             DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes,
             bool isInsideArgList=false,
             bool isInsideAssignment=false,
+            bool isInsideIfCondition=false,
             DatSymbolType parameterType = DatSymbolType.Void,
             ExecBlock execBlock = null
             )
@@ -469,7 +476,7 @@ namespace DaedalusCompiler.Compilation
             
             var symbolPart = complexReferenceNodes[0];
             DatSymbol symbol;
-            if (isInsideArgList || isInsideAssignment)
+            if (isInsideArgList || isInsideAssignment || isInsideIfCondition)
             {
                 symbol = GetSymbolFromComplexReferenceNode(symbolPart, execBlock);
             }
@@ -595,7 +602,7 @@ namespace DaedalusCompiler.Compilation
             var complexReferenceNodes = context.complexReferenceNode();
             
             List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-            if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment)
+            if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment || _assemblyBuilder.IsInsideIfCondition)
             {
                 instructions.Add(new LazyComplexReferenceNodeInstructions(_assemblyBuilder, this, complexReferenceNodes));
             }

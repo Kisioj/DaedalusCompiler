@@ -2289,28 +2289,43 @@ namespace DaedalusCompiler.Tests
             _instructions = GetExecBlockInstructions("testFunc");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // firstFunc(a);
                 new PushInstance(Ref("a")),
                 new Call(Ref("firstFunc")),
+                
+                // firstFunc(e);
                 new PushInstance(Ref("testFunc.e")),
                 new Call(Ref("firstFunc")),
                 
+                // secondFunc(a);
                 new PushInt(RefIndex("a")),
                 new Call(Ref("secondFunc")),
+                
+                // secondFunc(b);
                 new PushVar(Ref("b")),
                 new Call(Ref("secondFunc")),
                 
+                // secondFunc(e);
                 new PushInt(RefIndex("testFunc.e")),
                 new Call(Ref("secondFunc")),
+                
+                // secondFunc(f);
                 new PushVar(Ref("testFunc.f")),
                 new Call(Ref("secondFunc")),
                 
+                // thirdFunc(c);
                 new PushVar(Ref("c")),
                 new Call(Ref("thirdFunc")),
+                
+                // thirdFunc(c);
                 new PushVar(Ref("testFunc.g")),
                 new Call(Ref("thirdFunc")),
                 
+                // fourthFunc(d);
                 new PushVar(Ref("d")),
                 new Call(Ref("fourthFunc")),
+                
+                // fourthFunc(h);
                 new PushVar(Ref("testFunc.h")),
                 new Call(Ref("fourthFunc")),
                 
@@ -2391,6 +2406,7 @@ namespace DaedalusCompiler.Tests
             _instructions = GetExecBlockInstructions("testFunc");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // firstFunc(a, a, c, d, a);
                 new PushInstance(Ref("a")),
                 new PushInt(RefIndex("a")),
                 new PushVar(Ref("c")),
@@ -2398,6 +2414,7 @@ namespace DaedalusCompiler.Tests
                 new PushInstance(Ref("a")),
                 new Call(Ref("firstFunc")),
                 
+                // firstFunc(a, b, c, d, a);
                 new PushInstance(Ref("a")),
                 new PushVar(Ref("b")),
                 new PushVar(Ref("c")),
@@ -2457,6 +2474,7 @@ namespace DaedalusCompiler.Tests
                 // parameters
                 new PushVar(Ref("firstFunc.par")),
                 new Assign(),
+                
                 new Ret(),
             };
             AssertInstructionsMatch();
@@ -2467,20 +2485,27 @@ namespace DaedalusCompiler.Tests
                 // parameters
                 new PushInstance(Ref("secondFunc.par")),
                 new AssignInstance(),
+                
                 new Ret(),
             };
             AssertInstructionsMatch();
             
             _instructions = GetExecBlockInstructions("testFunc");
             _expectedInstructions = new List<AssemblyElement>
-            {              
+            {
+                // firstFunc(a);
                 new PushInt(RefIndex("a")),
                 new Call(Ref("firstFunc")),
+                
+                // firstFunc(b);
                 new PushVar(Ref("b")),
                 new Call(Ref("firstFunc")),
+                
+                // firstFunc(8);
                 new PushInt(8),
                 new Call(Ref("firstFunc")),
                 
+                // secondFunc(a);
                 new PushInstance(Ref("a")),
                 new Call(Ref("secondFunc")),
                 
@@ -2533,8 +2558,11 @@ namespace DaedalusCompiler.Tests
             _instructions = GetExecBlockInstructions("firstFunc");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // parameters
                 new PushVar(Ref("firstFunc.par")),
                 new Assign(),
+                
+                // return par;
                 new PushVar(Ref("firstFunc.par")),
                 new Ret(),
                 
@@ -2542,12 +2570,15 @@ namespace DaedalusCompiler.Tests
             };
             AssertInstructionsMatch();
             
-            /*
+            /* TODO not working but probably never happens in Gothic code
             _instructions = GetExecBlockInstructions("secondFunc");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // parameters
                 new PushInstance(Ref("secondFunc.par")),
                 new AssignInstance(),
+                
+                // return par;
                 new PushInt(RefIndex("secondFunc.par")),
                 new Ret(),
                 
@@ -2558,22 +2589,26 @@ namespace DaedalusCompiler.Tests
             
             _instructions = GetExecBlockInstructions("testFunc");
             _expectedInstructions = new List<AssemblyElement>
-            {              
+            {
+                // c = firstFunc(a);
                 new PushInt(RefIndex("a")),
                 new Call(Ref("firstFunc")),
                 new PushVar(Ref("testFunc.c")),
                 new Assign(),
                 
+                // c = firstFunc(b);
                 new PushVar(Ref("b")),
                 new Call(Ref("firstFunc")),
                 new PushVar(Ref("testFunc.c")),
                 new Assign(),
                 
+                // c = firstFunc(8);
                 new PushInt(8),
                 new Call(Ref("firstFunc")),
                 new PushVar(Ref("testFunc.c")),
                 new Assign(),
                 
+                // c = secondFunc(a);
                 new PushInstance(Ref("a")),
                 new Call(Ref("secondFunc")),
                 new PushVar(Ref("testFunc.c")),
@@ -2625,18 +2660,22 @@ namespace DaedalusCompiler.Tests
             _instructions = GetExecBlockInstructions("testFunc");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // e = a;
                 new PushVar(Ref("a")),
                 new PushVar(Ref("testFunc.e")),
                 new Assign(),
                 
+                // f = b;
                 new PushVar(Ref("b")),
                 new PushVar(Ref("testFunc.f")),
                 new AssignString(),
                 
+                // e = c;
                 new PushVar(Ref("c")),
                 new PushVar(Ref("testFunc.e")),
                 new Assign(),
                 
+                // f = d;
                 new PushVar(Ref("d")),
                 new PushVar(Ref("testFunc.f")),
                 new AssignString(),
@@ -2654,6 +2693,132 @@ namespace DaedalusCompiler.Tests
                 Ref("b"),
                 Ref("c"),
                 Ref("d"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        [Fact]
+        public void TestLazyReferenceInsideIfCondition()
+        {
+            _code = @"
+                func int intFunc(var int par) {
+                    return 0;
+                };
+                
+                func void testFunc () {
+                    var int c;
+                    
+                    if (intFunc(d)) {
+                        c = 0;
+                    }else if (d == a) {
+                        c = 1;
+                    } else if (d == b) {
+                        c = 2;
+                    } else if (d == 100) {
+                        c = 3;
+                    } else {
+                        c = d;
+                    };
+                
+                    var int d;
+                };
+                
+                const int a = 1;
+                var int b;
+            ";
+            
+            
+            _instructions = GetExecBlockInstructions("intFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("intFunc.par")),
+                new Assign(),
+                
+                // return 0;
+                new PushInt(0),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // if(intFunc(d))
+                new PushVar(Ref("testFunc.d")),
+                new Call(Ref("intFunc")),
+                new JumpIfToLabel("label_1"),
+
+                // c = 0;
+                new PushInt(0),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                new JumpToLabel("label_0"),
+                
+                // else if(d == a)
+                new AssemblyLabel("label_1"),
+                new PushVar(Ref("a")),
+                new PushVar(Ref("testFunc.d")),
+                new Equal(),
+                new JumpIfToLabel("label_2"),
+                
+                // c = 1;
+                new PushInt(1),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                new JumpToLabel("label_0"),
+                
+                // else if(d == b)
+                new AssemblyLabel("label_2"),
+                new PushVar(Ref("b")),
+                new PushVar(Ref("testFunc.d")),
+                new Equal(),
+                new JumpIfToLabel("label_3"),
+                
+                // c = 2;
+                new PushInt(2),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                new JumpToLabel("label_0"),
+                
+                // else if(d == 100)
+                new AssemblyLabel("label_3"),
+                new PushInt(100),
+                new PushVar(Ref("testFunc.d")),
+                new Equal(),
+                new JumpIfToLabel("label_4"),
+                
+                // c = 3;
+                new PushInt(3),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                new JumpToLabel("label_0"),
+                
+                // else
+                new AssemblyLabel("label_4"),
+                
+                // c = d;
+                new PushVar(Ref("testFunc.d")),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                
+                new AssemblyLabel("label_0"),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("intFunc"),
+                Ref("intFunc.par"),
+                Ref("testFunc"),
+                Ref("testFunc.c"),
+                Ref("testFunc.d"),
+                Ref("a"),
+                Ref("b"),
             };
             AssertSymbolsMatch(); 
         }
