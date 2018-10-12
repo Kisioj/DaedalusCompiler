@@ -328,6 +328,7 @@ namespace DaedalusCompiler.Compilation
 
         public bool IsInsideArgList;
         public bool IsInsideAssignment;
+        public bool IsInsideFloatAssignment;
         public bool IsInsideIfCondition;
         public List<DatSymbolType> ParametersTypes;
         public int ArgIndex;
@@ -349,6 +350,7 @@ namespace DaedalusCompiler.Compilation
             
             IsInsideArgList = false;
             IsInsideAssignment = false;
+            IsInsideFloatAssignment = false;
             ParametersTypes = new List<DatSymbolType>();
             ArgIndex = -1;
             _nextSymbolIndex = 0;

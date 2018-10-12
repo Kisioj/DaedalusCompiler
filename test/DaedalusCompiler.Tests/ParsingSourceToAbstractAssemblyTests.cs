@@ -12,6 +12,7 @@ namespace DaedalusCompiler.Tests
     {
         private readonly AssemblyBuilder _assemblyBuilder;
         private string _code;
+        private string _externalCode;
         private List<AssemblyElement> _instructions;
         private List<AssemblyElement> _expectedInstructions;
         private List<DatSymbol> _expectedSymbols;
@@ -24,6 +25,7 @@ namespace DaedalusCompiler.Tests
             _expectedInstructions = new List<AssemblyElement>();
             _expectedSymbols = new List<DatSymbol>();
             _parsed = false;
+            _externalCode = String.Empty;
         }
 
         private int RefIndex(string symbolName)
@@ -52,6 +54,12 @@ namespace DaedalusCompiler.Tests
         {
             _parsed = true;
 
+            if (_externalCode != string.Empty)
+            {
+                _assemblyBuilder.IsCurrentlyParsingExternals = true;
+                Utils.WalkSourceCode(_externalCode, _assemblyBuilder);
+                _assemblyBuilder.IsCurrentlyParsingExternals = false;
+            }
             Utils.WalkSourceCode(_code, _assemblyBuilder);
             _assemblyBuilder.Finish();
         }
@@ -2845,6 +2853,60 @@ namespace DaedalusCompiler.Tests
                 Ref("voidFunc"),
                 Ref("constIntFunc"),
                 Ref("constVoidFunc"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        [Fact]
+        public void TestExternalFunc()
+        {
+            _externalCode = @"
+                func float IntToFloat(var int par0) {};
+            ";
+            _code = @"
+                func float floatFunc() {};
+
+                func void testFunc() {
+                    var int wait;
+                    var float waitTime;
+                    waitTime = 2.5;
+                    waitTime = floatFunc();
+                    waitTime = IntToFloat(wait);
+                };
+            ";
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // waitTime = 2.5;
+                new PushInt(1075838976),
+                new PushVar(Ref("testFunc.waitTime")),
+                new AssignFloat(),
+                
+                // waitTime = floatFunc();
+                new Call(Ref("floatFunc")),
+                new PushVar(Ref("testFunc.waitTime")),
+                new AssignFloat(),
+                
+                // waitTime = IntToFloat(wait);
+                new PushVar(Ref("testFunc.wait")),
+                new CallExternal(Ref("IntToFloat")),
+                new PushVar(Ref("testFunc.waitTime")),
+                new AssignFloat(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("IntToFloat"),
+                Ref("IntToFloat.par0"),
+                Ref("floatFunc"),
+                Ref("testFunc"),
+                Ref("testFunc.wait"),
+                Ref("testFunc.waitTime"),
             };
             AssertSymbolsMatch(); 
         }

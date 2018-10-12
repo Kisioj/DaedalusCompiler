@@ -627,25 +627,33 @@ namespace DaedalusCompiler.Compilation
         {
             _assemblyBuilder.IsInsideAssignment = true;
             var complexReferenceNodes = context.complexReferenceLeftSide().complexReferenceNode();
-            var assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]);
+            DatSymbol assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]);
             List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
 
             if (assigmentSymbol.Type == DatSymbolType.Float)
             {
+                _assemblyBuilder.IsInsideFloatAssignment = true;
+            }
+            /*
+            if (assigmentSymbol.Type == DatSymbolType.Float) // TODO?
+            {
                 var parsedFloat = EvaluatorHelper.EvaluateFloatExpression(context.expressionBlock().GetText());
                 _assemblyBuilder.AddInstruction(new PushInt(parsedFloat));
                 _assemblyBuilder.IsInsideEvalableStatement = true; // we invoke here 
             }
+            */
         }
 
 
         public override void ExitAssignment(DaedalusParser.AssignmentContext context)
         {
             _assemblyBuilder.IsInsideAssignment = false;
+            _assemblyBuilder.IsInsideFloatAssignment = false;
+            
             string assignmentOperator = context.assigmentOperator().GetText();
 
-            _assemblyBuilder.IsInsideEvalableStatement = false;
+            //_assemblyBuilder.IsInsideEvalableStatement = false;
             _assemblyBuilder.AssigmentEnd(assignmentOperator);
         }
 
@@ -699,9 +707,28 @@ namespace DaedalusCompiler.Compilation
         {
             if (!_assemblyBuilder.IsInsideEvalableStatement)
             {
-                _assemblyBuilder.AddInstruction(new PushInt(int.Parse(context.GetText())));   
+                if (_assemblyBuilder.IsInsideFloatAssignment)
+                {
+                    int parsedFloat = EvaluatorHelper.EvaluateFloatExpression(context.Parent.Parent.GetText());
+                    _assemblyBuilder.AddInstruction(new PushInt(parsedFloat));
+                }
+                else
+                {
+                    _assemblyBuilder.AddInstruction(new PushInt(int.Parse(context.GetText())));   
+                }
+                
             }
         }
+        
+        public override void EnterFloatLiteralValue(DaedalusParser.FloatLiteralValueContext context)
+        {
+            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            {
+                int parsedFloat = EvaluatorHelper.EvaluateFloatExpression(context.Parent.Parent.GetText());
+                _assemblyBuilder.AddInstruction(new PushInt(parsedFloat));
+            }
+        }
+        
 
         public override void EnterStringLiteralValue(DaedalusParser.StringLiteralValueContext context)
         {
@@ -712,7 +739,7 @@ namespace DaedalusCompiler.Compilation
                 string symbolName = _assemblyBuilder.NewStringSymbolName();
                 DatSymbol symbol = SymbolBuilder.BuildConst(symbolName, DatSymbolType.String, value, location);
                 _assemblyBuilder.AddSymbol(symbol);
-                _assemblyBuilder.AddInstruction(new PushVar(symbol));  // TODO what if lvalue is int and rvalue is instance??
+                _assemblyBuilder.AddInstruction(new PushVar(symbol));
             }
         }
 
@@ -822,11 +849,10 @@ namespace DaedalusCompiler.Compilation
 
         public override void ExitOneArgExpression(DaedalusParser.OneArgExpressionContext context)
         {
-            var exprOperator = context.oneArgOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator, false);
-
-            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            if (!_assemblyBuilder.IsInsideEvalableStatement && !_assemblyBuilder.IsInsideFloatAssignment)
             {
+                var exprOperator = context.oneArgOperator().GetText();
+                var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator, false);
                 _assemblyBuilder.AddInstruction(instruction);   
             }
         }
