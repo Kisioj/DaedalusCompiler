@@ -262,6 +262,7 @@ namespace DaedalusCompiler.Compilation
         private readonly bool _isInsideArgList;
         private readonly bool _isInsideAssignment;
         private readonly bool _isInsideIfCondition;
+        private readonly bool _isInsideReturnStatement;
         
         
         public LazyComplexReferenceNodeInstructions(
@@ -272,6 +273,7 @@ namespace DaedalusCompiler.Compilation
             _isInsideArgList = assemblyBuilder.IsInsideArgList;
             _isInsideAssignment = assemblyBuilder.IsInsideAssignment;
             _isInsideIfCondition = assemblyBuilder.IsInsideIfCondition;
+            _isInsideReturnStatement = assemblyBuilder.IsInsideReturnStatement;
             _parameterType = _isInsideArgList ? assemblyBuilder.ParametersTypes[assemblyBuilder.ArgIndex] : DatSymbolType.Void;
             _execBlock = assemblyBuilder.ActiveExecBlock;
             _parserListener = parserListener;
@@ -286,6 +288,7 @@ namespace DaedalusCompiler.Compilation
                 isInsideArgList:_isInsideArgList,
                 isInsideAssignment:_isInsideAssignment,
                 isInsideIfCondition: _isInsideIfCondition,
+                isInsideReturnStatement: _isInsideReturnStatement,
                 parameterType:_parameterType,
                 execBlock:_execBlock);
         }
@@ -330,6 +333,7 @@ namespace DaedalusCompiler.Compilation
         public bool IsInsideAssignment;
         public bool IsInsideFloatAssignment;
         public bool IsInsideIfCondition;
+        public bool IsInsideReturnStatement;
         public List<DatSymbolType> ParametersTypes;
         public int ArgIndex;
         private int _nextSymbolIndex;
@@ -351,6 +355,7 @@ namespace DaedalusCompiler.Compilation
             IsInsideArgList = false;
             IsInsideAssignment = false;
             IsInsideFloatAssignment = false;
+            IsInsideReturnStatement = false;
             ParametersTypes = new List<DatSymbolType>();
             ArgIndex = -1;
             _nextSymbolIndex = 0;

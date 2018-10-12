@@ -5,6 +5,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using DaedalusCompiler.Dat;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace DaedalusCompiler.Compilation
 {
@@ -353,9 +354,15 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.ExecBlockEnd();
         }
 
+        public override void EnterReturnStatement([NotNull] DaedalusParser.ReturnStatementContext context)
+        {
+            _assemblyBuilder.IsInsideReturnStatement = true;
+        }
+        
         public override void ExitReturnStatement([NotNull] DaedalusParser.ReturnStatementContext context)
         {
             _assemblyBuilder.AddInstruction(new Ret());
+            _assemblyBuilder.IsInsideReturnStatement = false;
         }
 
         public override void EnterIfBlockStatement(DaedalusParser.IfBlockStatementContext context)
@@ -470,6 +477,7 @@ namespace DaedalusCompiler.Compilation
             bool isInsideArgList=false,
             bool isInsideAssignment=false,
             bool isInsideIfCondition=false,
+            bool isInsideReturnStatement=false,
             DatSymbolType parameterType = DatSymbolType.Void,
             ExecBlock execBlock = null
             )
@@ -480,7 +488,7 @@ namespace DaedalusCompiler.Compilation
             
             var symbolPart = complexReferenceNodes[0];
             DatSymbol symbol;
-            if (isInsideArgList || isInsideAssignment || isInsideIfCondition)
+            if (isInsideArgList || isInsideAssignment || isInsideIfCondition || isInsideReturnStatement)
             {
                 symbol = GetSymbolFromComplexReferenceNode(symbolPart, execBlock);
             }
@@ -522,7 +530,7 @@ namespace DaedalusCompiler.Compilation
                         {
                             instructions.Add(new PushInt(symbol.Index));
                         }
-                        else if (symbol.Type == DatSymbolType.Instance && parameterType == DatSymbolType.Class)
+                        else if (symbol.Type == DatSymbolType.Instance && (parameterType == DatSymbolType.Class || parameterType == DatSymbolType.Instance))
                         {
                             instructions.Add(new PushInstance(symbol));
                         }
@@ -530,6 +538,21 @@ namespace DaedalusCompiler.Compilation
                         {
                             instructions.Add(new PushVar(symbol));
                         }
+                    }
+                    else if (isInsideReturnStatement && execBlock != null)
+                    {
+                        if (symbol.Type == DatSymbolType.Instance && execBlock.Symbol.ReturnType == DatSymbolType.Int)
+                        {
+                            instructions.Add(new PushInt(symbol.Index));
+                        }
+                        else
+                        {
+                            instructions.Add(new PushVar(symbol));
+                        }
+                    }
+                    else if (symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
+                    {
+                        instructions.Add(new PushInt(symbol.Index));
                     }
                     else
                     {
@@ -606,7 +629,7 @@ namespace DaedalusCompiler.Compilation
             var complexReferenceNodes = context.complexReferenceNode();
             
             List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-            if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment || _assemblyBuilder.IsInsideIfCondition)
+            if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment || _assemblyBuilder.IsInsideIfCondition || _assemblyBuilder.IsInsideReturnStatement)
             {
                 instructions.Add(new LazyComplexReferenceNodeInstructions(_assemblyBuilder, this, complexReferenceNodes));
             }

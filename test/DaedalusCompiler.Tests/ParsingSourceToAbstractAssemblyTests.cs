@@ -2535,6 +2535,88 @@ namespace DaedalusCompiler.Tests
             };
             AssertSymbolsMatch(); 
         }
+        
+        
+        
+        [Fact]
+        public void TestLazyReferenceExternalFunctionCall()
+        {
+            _externalCode = @"
+                func int NPC_HasNews(var instance par0, var int par1, var instance par2, var instance par3) {};
+            ";
+            _code = @"
+                class C_NPC { var int data [200]; };
+
+                func int firstFunc(var C_NPC par0, var C_NPC par1, var C_NPC par2) {};
+
+                func int testFunc()
+                {
+                    firstFunc(person, person, person);
+                    NPC_HasNews(person, person, person, person);
+                };
+                
+                instance person(C_NPC);
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushInstance(Ref("firstFunc.par2")),
+                new AssignInstance(),
+                
+                new PushInstance(Ref("firstFunc.par1")),
+                new AssignInstance(),
+                
+                new PushInstance(Ref("firstFunc.par0")),
+                new AssignInstance(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // firstFunc(person, person, person);
+                new PushInstance(Ref("person")),
+                new PushInstance(Ref("person")),
+                new PushInstance(Ref("person")),
+                new Call(Ref("firstFunc")),
+                
+                // NPC_HasNews(person, person, person, person);
+                new PushInstance(Ref("person")),
+                new PushInt(RefIndex("person")),
+                new PushInstance(Ref("person")),
+                new PushInstance(Ref("person")),
+                new CallExternal(Ref("NPC_HasNews")),
+
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("NPC_HasNews"),
+                Ref("NPC_HasNews.par0"),
+                Ref("NPC_HasNews.par1"),
+                Ref("NPC_HasNews.par2"),
+                Ref("NPC_HasNews.par3"),
+                
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("firstFunc"),
+                Ref("firstFunc.par0"),
+                Ref("firstFunc.par1"),
+                Ref("firstFunc.par2"),
+                Ref("testFunc"),
+                Ref("person"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        
         [Fact]
         public void TestLazyReferenceAssignFunctionCall()
         {
@@ -2827,6 +2909,168 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc.d"),
                 Ref("a"),
                 Ref("b"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        
+        [Fact]
+        public void TestLazyReferenceReturn()
+        {
+            _code = @"
+                class person {
+                    var int age;
+                };
+                
+                func int firstFunc() {
+                    return a;
+                };
+                
+                func string secondFunc() {
+                    return b;
+                };
+                
+                func int thirdFunc() {
+                    return c;
+                };
+                
+                var int a;
+                var string b;
+                instance c(person);
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return a;
+                new PushVar(Ref("a")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("secondFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return b;
+                new PushVar(Ref("b")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("thirdFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return c;
+                new PushInt(RefIndex("c")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("person"),
+                Ref("person.age"),
+                Ref("firstFunc"),
+                Ref("secondFunc"),
+                Ref("thirdFunc"),
+                Ref("a"),
+                Ref("b"),
+                Ref("c"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        [Fact]
+        public void TestLazyReferenceInsideComplexIfCondition()
+        {
+            _externalCode = @"
+                func int NPC_HasItems(var instance par0, var int par1) {};
+            ";
+            _code = @"
+                class C_NPC { var int data [200]; };
+
+                func int testFunc()
+                {
+                    var int newWeapon;
+                    
+                    if (NPC_HasItems(person, sword) >= 1)
+                    {
+                        return sword;
+                    };
+                    if ( (oldWeapon == axe) || (oldWeapon == sword) )
+                    {
+                        newWeapon = 0;
+                    };
+                    var int oldWeapon;
+                };
+                instance person(C_NPC);
+                instance sword (C_NPC){};
+                instance axe (C_NPC){};
+            ";
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // if (NPC_HasItems(person, sword) >= 1)
+                new PushInt(1),
+                new PushInstance(Ref("person")),
+                new PushInt(RefIndex("sword")),
+                new CallExternal(Ref("NPC_HasItems")),
+                new GreaterOrEqual(),
+                new JumpIfToLabel("label_0"),
+                
+                // return sword;
+                new PushInt(RefIndex("sword")),
+                new Ret(),
+                
+                // endif
+                new AssemblyLabel("label_0"),
+                
+                // if ( (oldWeapon == axe) || (oldWeapon == sword) )
+                new PushInt(RefIndex("sword")),
+                new PushVar(Ref("testFunc.oldWeapon")),
+                new Equal(),
+                new PushInt(RefIndex("axe")),
+                new PushVar(Ref("testFunc.oldWeapon")),
+                new Equal(),
+                new LogOr(),
+                new JumpIfToLabel("label_1"),
+                
+                // newWeapon = 0;
+                new PushInt(0),
+                new PushVar(Ref("testFunc.newWeapon")),
+                new Assign(),
+                
+                //endif
+                new AssemblyLabel("label_1"),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("NPC_HasItems"),
+                Ref("NPC_HasItems.par0"),
+                Ref("NPC_HasItems.par1"),
+                
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("testFunc"),
+                Ref("testFunc.newWeapon"),
+                Ref("testFunc.oldWeapon"),
+                Ref("person"),
+                Ref("sword"),
+                Ref("axe"),
+
             };
             AssertSymbolsMatch(); 
         }
