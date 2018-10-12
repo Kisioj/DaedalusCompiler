@@ -259,6 +259,8 @@ namespace DaedalusCompiler.Compilation
         private readonly ExecBlock _execBlock;
         private readonly DaedalusParserListener _parserListener;
         private readonly DaedalusParser.ComplexReferenceNodeContext[] _complexReferenceNodes;
+        private readonly bool _isInsideArgList;
+        private readonly bool _isInsideAssignment;
         
         
         public LazyComplexReferenceNodeInstructions(
@@ -266,17 +268,21 @@ namespace DaedalusCompiler.Compilation
             DaedalusParserListener parserListener,
             DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
         {
-            _parameterType = assemblyBuilder.ParametersTypes[assemblyBuilder.ArgIndex];
+            _isInsideArgList = assemblyBuilder.IsInsideArgList;
+            _isInsideAssignment = assemblyBuilder.IsInsideAssignment;
+            _parameterType = _isInsideArgList ? assemblyBuilder.ParametersTypes[assemblyBuilder.ArgIndex] : DatSymbolType.Void;
             _execBlock = assemblyBuilder.ActiveExecBlock;
             _parserListener = parserListener;
             _complexReferenceNodes = complexReferenceNodes;
+            
         }
         
         public List<AssemblyInstruction> Evaluate()
         {
             return _parserListener.GetComplexReferenceNodeInstructions(
-                _complexReferenceNodes,
-                isInsideArgList:true,
+                complexReferenceNodes:_complexReferenceNodes,
+                isInsideArgList:_isInsideArgList,
+                isInsideAssignment:_isInsideAssignment,
                 parameterType:_parameterType,
                 execBlock:_execBlock);
         }
@@ -318,6 +324,7 @@ namespace DaedalusCompiler.Compilation
         public bool IsCurrentlyParsingExternals;
 
         public bool IsInsideArgList;
+        public bool IsInsideAssignment;
         public List<DatSymbolType> ParametersTypes;
         public int ArgIndex;
         private int _nextSymbolIndex;
@@ -337,6 +344,7 @@ namespace DaedalusCompiler.Compilation
             IsCurrentlyParsingExternals = false;
             
             IsInsideArgList = false;
+            IsInsideAssignment = false;
             ParametersTypes = new List<DatSymbolType>();
             ArgIndex = -1;
             _nextSymbolIndex = 0;

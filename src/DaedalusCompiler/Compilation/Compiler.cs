@@ -46,6 +46,7 @@ namespace DaedalusCompiler.Compilation
                     ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, i), parser.daedalusFile());
                 }
 
+                assemblyBuilder.Finish();
                 if (compileToAssembly)
                 {
                     Console.WriteLine(assemblyBuilder.GetAssembler());

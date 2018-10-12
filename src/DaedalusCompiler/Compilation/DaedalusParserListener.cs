@@ -458,15 +458,18 @@ namespace DaedalusCompiler.Compilation
         public List<AssemblyInstruction> GetComplexReferenceNodeInstructions(
             DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes,
             bool isInsideArgList=false,
+            bool isInsideAssignment=false,
             DatSymbolType parameterType = DatSymbolType.Void,
             ExecBlock execBlock = null
             )
         {
-
+            
+            
+            ExecBlock activeBlock = execBlock != null ? activeBlock = execBlock : _assemblyBuilder.ActiveExecBlock;
             
             var symbolPart = complexReferenceNodes[0];
             DatSymbol symbol;
-            if (isInsideArgList)
+            if (isInsideArgList || isInsideAssignment)
             {
                 symbol = GetSymbolFromComplexReferenceNode(symbolPart, execBlock);
             }
@@ -484,7 +487,7 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
                     {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
+                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText(), activeBlock);
                         if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
                         {
                             throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
@@ -532,7 +535,7 @@ namespace DaedalusCompiler.Compilation
                 string typeName = _assemblyBuilder.Symbols[symbol.ParentIndex].Name;
                 var attributePart = complexReferenceNodes[1];
                 string attributeName = attributePart.referenceNode().GetText();                
-                DatSymbol attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
+                DatSymbol attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}", activeBlock);
 
                 
                 var simpleValueContext = attributePart.simpleValue();
@@ -541,7 +544,7 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
                     {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
+                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText(), activeBlock);
                         if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
                         {
                             throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
@@ -592,7 +595,7 @@ namespace DaedalusCompiler.Compilation
             var complexReferenceNodes = context.complexReferenceNode();
             
             List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-            if (_assemblyBuilder.IsInsideArgList)
+            if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment)
             {
                 instructions.Add(new LazyComplexReferenceNodeInstructions(_assemblyBuilder, this, complexReferenceNodes));
             }
@@ -611,9 +614,10 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
         {
+            _assemblyBuilder.IsInsideAssignment = true;
             var complexReferenceNodes = context.complexReferenceLeftSide().complexReferenceNode();
             var assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]);
-            List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes, isInsideArgList:false);
+            List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
 
             if (assigmentSymbol.Type == DatSymbolType.Float)
@@ -627,6 +631,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void ExitAssignment(DaedalusParser.AssignmentContext context)
         {
+            _assemblyBuilder.IsInsideAssignment = false;
             string assignmentOperator = context.assigmentOperator().GetText();
 
             _assemblyBuilder.IsInsideEvalableStatement = false;
@@ -813,11 +818,6 @@ namespace DaedalusCompiler.Compilation
             {
                 _assemblyBuilder.AddInstruction(instruction);   
             }
-        }
-
-        public override void ExitDaedalusFile(DaedalusParser.DaedalusFileContext context)
-        {
-            _assemblyBuilder.Finish();
         }
         
         private DatSymbolType DatSymbolTypeFromString(string typeName)

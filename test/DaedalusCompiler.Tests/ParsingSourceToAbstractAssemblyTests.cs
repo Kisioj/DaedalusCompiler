@@ -53,6 +53,7 @@ namespace DaedalusCompiler.Tests
             _parsed = true;
 
             Utils.WalkSourceCode(_code, _assemblyBuilder);
+            _assemblyBuilder.Finish();
         }
 
         private void AssertRefContentEqual(string symbolName, object expectedValue)
@@ -2428,7 +2429,7 @@ namespace DaedalusCompiler.Tests
         }
         
         [Fact]
-        public void TestFunctionArgumentsLazyReference()
+        public void TestLazyReferenceFunctionCall()
         {
             _code = @"
                 class person {
@@ -2498,6 +2499,161 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc"),
                 Ref("a"),
                 Ref("b"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        [Fact]
+        public void TestLazyReferenceAssignFunctionCall()
+        {
+            _code = @"
+                class person {
+                    var int age;
+                };
+                func int firstFunc (var int par) {
+                    return par;
+                };
+                func int secondFunc (var person par) {
+                    return par;
+                };
+                
+                func void testFunc () {
+                    var int c;
+                
+                    c = firstFunc(a);
+                    c = firstFunc(b);
+                    c = firstFunc(8);
+                    
+                    c = secondFunc(a);
+                };
+                
+                var person a;
+                var int b;
+            ";
+            
+            _instructions = GetExecBlockInstructions("firstFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("firstFunc.par")),
+                new Assign(),
+                new PushVar(Ref("firstFunc.par")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            /*
+            _instructions = GetExecBlockInstructions("secondFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushInstance(Ref("secondFunc.par")),
+                new AssignInstance(),
+                new PushInt(RefIndex("secondFunc.par")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            */
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {              
+                new PushInt(RefIndex("a")),
+                new Call(Ref("firstFunc")),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                
+                new PushVar(Ref("b")),
+                new Call(Ref("firstFunc")),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                
+                new PushInt(8),
+                new Call(Ref("firstFunc")),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                
+                new PushInstance(Ref("a")),
+                new Call(Ref("secondFunc")),
+                new PushVar(Ref("testFunc.c")),
+                new Assign(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("person"),
+                Ref("person.age"),
+                Ref("firstFunc"),
+                Ref("firstFunc.par"),
+                Ref("secondFunc"),
+                Ref("secondFunc.par"),
+                Ref("testFunc"),
+                Ref("testFunc.c"),
+                Ref("a"),
+                Ref("b"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        [Fact]
+        public void TestLazyReferenceAssignIntString()
+        {
+            _code = @"
+                func void testFunc () {
+                    var int e;
+                    var string f;
+                    
+                    e = a;
+                    f = b;
+                    
+                    e = c;
+                    f = d;
+                };
+                
+                const int a = 1;
+                const string b = ""super"";
+                
+                var int c;
+                var string d;
+            ";
+            
+           
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("a")),
+                new PushVar(Ref("testFunc.e")),
+                new Assign(),
+                
+                new PushVar(Ref("b")),
+                new PushVar(Ref("testFunc.f")),
+                new AssignString(),
+                
+                new PushVar(Ref("c")),
+                new PushVar(Ref("testFunc.e")),
+                new Assign(),
+                
+                new PushVar(Ref("d")),
+                new PushVar(Ref("testFunc.f")),
+                new AssignString(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("testFunc"),
+                Ref("testFunc.e"),
+                Ref("testFunc.f"),
+                Ref("a"),
+                Ref("b"),
+                Ref("c"),
+                Ref("d"),
             };
             AssertSymbolsMatch(); 
         }
