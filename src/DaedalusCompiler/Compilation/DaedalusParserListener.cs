@@ -666,11 +666,11 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
         {
-            _assemblyBuilder.IsInsideAssignment = true;
+            
             var complexReferenceNodes = context.complexReferenceLeftSide().complexReferenceNode();
             List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
-
+            _assemblyBuilder.IsInsideAssignment = true;
             
             // TODO, what if it's array element, then assignment Symbol will be array,
             // TODO  or what if it's class attribute that is instance of another class?
