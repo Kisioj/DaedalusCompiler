@@ -328,7 +328,12 @@ namespace DaedalusCompiler.Tests
                 
                 func void  testFunc()
                 {
+                    var int test;
                     person = HLP_GetNpc (0);
+                    test = person == person;
+                    test = test == person;
+                    test = person + person;
+                    test = test + person;
                 };
             ";
 
@@ -340,6 +345,35 @@ namespace DaedalusCompiler.Tests
                 new CallExternal(Ref("HLP_GetNpc")),
                 new PushInstance(Ref("person")),
                 new AssignInstance(),
+                
+                // test = person == person;
+                new PushInt(RefIndex("person")),
+                new PushInt(RefIndex("person")),
+                new Equal(),
+                new PushVar(Ref("testFunc.test")),
+                new Assign(),
+                
+                // test = test == person;
+                new PushInt(RefIndex("person")),
+                new PushVar(Ref("testFunc.test")),
+                new Equal(),
+                new PushVar(Ref("testFunc.test")),
+                new Assign(),
+                
+                // test = person + person;
+                new PushInt(RefIndex("person")),
+                new PushInt(RefIndex("person")),
+                new Add(),
+                new PushVar(Ref("testFunc.test")),
+                new Assign(),
+                
+                // test = test + person;
+                new PushInt(RefIndex("person")),
+                new PushVar(Ref("testFunc.test")),
+                new Add(),
+                new PushVar(Ref("testFunc.test")),
+                new Assign(),
+
 
                 new Ret(),
             };
@@ -353,6 +387,7 @@ namespace DaedalusCompiler.Tests
                 Ref("C_NPC.data"),
                 Ref("person"),
                 Ref("testFunc"),
+                Ref("testFunc.test"),
             };
             AssertSymbolsMatch();
         }
@@ -3203,6 +3238,7 @@ namespace DaedalusCompiler.Tests
         public void TestKeywordsSelfAndSlf()
         {
             _externalCode = @"
+                func int NPC_IsPlayer(var instance par0) {};
                 func void WLD_PlayEffect(var string par0, var instance par1, var instance par2, var int par3, var int par4, var int par5, var int par6) {};
                 func void NPC_ChangeAttribute(var instance par0, var int par1, var int par2) {};
                 func void CreateInvItems(var instance par0, var int par1, var int par2) {};
@@ -3246,12 +3282,12 @@ namespace DaedalusCompiler.Tests
                 
                 instance Geralt (NPC_Default)
                 {
-                slf.attribute[ATR_STRENGTH] = 10;
-                self.attribute[ATR_DEXTERITY] = 10;
-                                                            
-                // CreateInvItems (slf, sword, 1); // cannot use slf alone
-                CreateInvItems(self, sword, 2);
-                gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
+                    slf.attribute[ATR_STRENGTH] = 10;
+                    self.attribute[ATR_DEXTERITY] = 10;
+                                                                
+                    // CreateInvItems (slf, sword, 1); // cannot use slf alone
+                    CreateInvItems(self, sword, 2);
+                    gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
                 };
             ";
             char prefix = (char) 255;
@@ -3370,9 +3406,24 @@ namespace DaedalusCompiler.Tests
             
             _expectedSymbols = new List<DatSymbol>
             {
+                Ref("NPC_IsPlayer"),
+                Ref("NPC_IsPlayer.par0"),
                 Ref("WLD_PlayEffect"),
+                Ref("WLD_PlayEffect.par0"),
+                Ref("WLD_PlayEffect.par1"),
+                Ref("WLD_PlayEffect.par2"),
+                Ref("WLD_PlayEffect.par3"),
+                Ref("WLD_PlayEffect.par4"),
+                Ref("WLD_PlayEffect.par5"),
+                Ref("WLD_PlayEffect.par6"),
                 Ref("NPC_ChangeAttribute"),
+                Ref("NPC_ChangeAttribute.par0"),
+                Ref("NPC_ChangeAttribute.par1"),
+                Ref("NPC_ChangeAttribute.par2"),
                 Ref("CreateInvItems"),
+                Ref("CreateInvItems.par0"),
+                Ref("CreateInvItems.par1"),
+                Ref("CreateInvItems.par2"),
                 
                 Ref("C_NPC"),
                 Ref("C_NPC.attribute"),

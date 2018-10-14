@@ -255,42 +255,53 @@ namespace DaedalusCompiler.Compilation
 
     public class LazyComplexReferenceNodeInstructions : AssemblyInstruction
     {
-        private readonly DatSymbolType _parameterType;
-        private readonly ExecBlock _execBlock;
-        private readonly DaedalusParserListener _parserListener;
         private readonly DaedalusParser.ComplexReferenceNodeContext[] _complexReferenceNodes;
+        private readonly AssemblyBuilder _assemblyBuilder;
+        private readonly DaedalusParserListener _parserListener;
+        
+        private readonly ExecBlock _activeExecBlock;
+        
         private readonly bool _isInsideArgList;
         private readonly bool _isInsideAssignment;
+        private readonly bool _isInsideFloatAssignment;
         private readonly bool _isInsideIfCondition;
         private readonly bool _isInsideReturnStatement;
-        
+        private readonly List<DatSymbolType> _parametersTypes;
+        private readonly int _argIndex;
         
         public LazyComplexReferenceNodeInstructions(
             AssemblyBuilder assemblyBuilder,
             DaedalusParserListener parserListener,
             DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
         {
+            _complexReferenceNodes = complexReferenceNodes;
+            _assemblyBuilder = assemblyBuilder;
+            _parserListener = parserListener;
+            
+            _activeExecBlock = assemblyBuilder.ActiveExecBlock;
+           
             _isInsideArgList = assemblyBuilder.IsInsideArgList;
             _isInsideAssignment = assemblyBuilder.IsInsideAssignment;
+            _isInsideFloatAssignment = assemblyBuilder.IsInsideFloatAssignment;
             _isInsideIfCondition = assemblyBuilder.IsInsideIfCondition;
             _isInsideReturnStatement = assemblyBuilder.IsInsideReturnStatement;
-            _parameterType = _isInsideArgList ? assemblyBuilder.ParametersTypes[assemblyBuilder.ArgIndex] : DatSymbolType.Void;
-            _execBlock = assemblyBuilder.ActiveExecBlock;
-            _parserListener = parserListener;
-            _complexReferenceNodes = complexReferenceNodes;
-            
+            _parametersTypes = assemblyBuilder.ParametersTypes;
+            _argIndex = assemblyBuilder.ArgIndex;
         }
         
         public List<AssemblyInstruction> Evaluate()
         {
-            return _parserListener.GetComplexReferenceNodeInstructions(
-                complexReferenceNodes:_complexReferenceNodes,
-                isInsideArgList:_isInsideArgList,
-                isInsideAssignment:_isInsideAssignment,
-                isInsideIfCondition: _isInsideIfCondition,
-                isInsideReturnStatement: _isInsideReturnStatement,
-                parameterType:_parameterType,
-                execBlock:_execBlock);
+            _assemblyBuilder.ActiveExecBlock = _activeExecBlock;
+            
+            _assemblyBuilder.IsInsideArgList = _isInsideArgList;
+            _assemblyBuilder.IsInsideAssignment = _isInsideAssignment;
+            _assemblyBuilder.IsInsideFloatAssignment = _isInsideFloatAssignment;
+            _assemblyBuilder.IsInsideIfCondition = _isInsideIfCondition;
+            _assemblyBuilder.IsInsideReturnStatement = _isInsideReturnStatement;
+            _assemblyBuilder.ParametersTypes = _parametersTypes;
+            _assemblyBuilder.ArgIndex = _argIndex;
+            
+            return _parserListener.GetComplexReferenceNodeInstructions(_complexReferenceNodes);
         }
     }
     
@@ -661,18 +672,84 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
-        public DatSymbol ResolveSymbol(string symbolName)
+
+        /*
+        public DatSymbol GetReferenceSymbol(string symbolName)
         {
-            return ResolveSymbol(symbolName, ActiveExecBlock);
+            
+            
+
+            
+            if (ActiveExecBlock.Symbol.Type == DatSymbolType.Prototype ||
+                ActiveExecBlock.Symbol.Type == DatSymbolType.Instance)
+            {
+                if (symbolName == "slf" || symbolName == "self")
+                {
+                    return ActiveExecBlock.Symbol;
+                }
+            } else if (ActiveExecBlock.Symbol.Type == DatSymbolType.Func)
+            {
+                
+            }
+            
+            
+            
+            DatSymbol symbol;
+
+            if (ActiveExecBlock != null)
+            {
+                DatSymbol currentExecBlockSymbol = ActiveExecBlock.Symbol;
+
+                while (currentExecBlockSymbol != null)
+                {
+                    var targetSymbolName = $"{currentExecBlockSymbol.Name}.{symbolName}";
+
+                    symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
+
+                    if (symbol == null)
+                    {
+                        if (currentExecBlockSymbol.ParentIndex == -1)
+                        {
+                            break;
+                        }
+
+                        currentExecBlockSymbol = Symbols[currentExecBlockSymbol.ParentIndex];
+                    }
+                    else
+                    {
+                        return symbol;
+                    }
+                }
+            }
+
+            symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
+
+            if (symbol == null)
+            {
+                throw new Exception("Symbol " + symbolName + " is not added");
+            }
+
+            return symbol;
         }
         
-        public DatSymbol ResolveSymbol(string symbolName, ExecBlock execBlock)
+        
+        public DatSymbol GetComplexReferenceSymbol(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
+        {
+            DaedalusParser.ComplexReferenceNodeContext leftPart = complexReferenceNodes[0];
+            DatSymbol leftPartSymbol = 0;
+
+        }
+        */
+        
+        
+        
+        public DatSymbol ResolveSymbol(string symbolName)
         {
             DatSymbol symbol;
 
-            if (execBlock != null && !symbolName.Contains("."))
+            if (ActiveExecBlock != null && !symbolName.Contains("."))
             {
-                DatSymbol currentExecBlockSymbol = execBlock.Symbol;
+                DatSymbol currentExecBlockSymbol = ActiveExecBlock.Symbol;
 
                 while (currentExecBlockSymbol != null)
                 {

@@ -472,25 +472,24 @@ namespace DaedalusCompiler.Compilation
         }
 
 
-        public List<AssemblyInstruction> GetComplexReferenceNodeInstructions(
-            DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes,
-            bool isInsideArgList=false,
-            bool isInsideAssignment=false,
-            bool isInsideIfCondition=false,
-            bool isInsideReturnStatement=false,
-            DatSymbolType parameterType = DatSymbolType.Void,
-            ExecBlock execBlock = null
-            )
+        public List<AssemblyInstruction> GetComplexReferenceNodeInstructions(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
         {
             
+            ExecBlock activeBlock = _assemblyBuilder.ActiveExecBlock;
+            bool isInsideArgList = _assemblyBuilder.IsInsideArgList;
+            bool isInsideAssignment = _assemblyBuilder.IsInsideAssignment;
+            bool isInsideIfCondition = _assemblyBuilder.IsInsideIfCondition;
+            bool isInsideReturnStatement = _assemblyBuilder.IsInsideReturnStatement;
             
-            ExecBlock activeBlock = execBlock != null ? activeBlock = execBlock : _assemblyBuilder.ActiveExecBlock;
+
             
             var symbolPart = complexReferenceNodes[0];
+            var symbolName = symbolPart.referenceNode().GetText();
             DatSymbol symbol;
-            if (isInsideArgList || isInsideAssignment || isInsideIfCondition || isInsideReturnStatement)
+
+            if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
             {
-                symbol = GetSymbolFromComplexReferenceNode(symbolPart, execBlock);
+                symbol = activeBlock.Symbol;
             }
             else
             {
@@ -506,7 +505,7 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
                     {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText(), activeBlock);
+                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
                         if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
                         {
                             throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
@@ -526,6 +525,7 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (isInsideArgList)
                     {
+                        DatSymbolType parameterType = _assemblyBuilder.GetParameterType();
                         if (symbol.Type == DatSymbolType.Instance && parameterType == DatSymbolType.Int)
                         {
                             instructions.Add(new PushInt(symbol.Index));
@@ -539,9 +539,9 @@ namespace DaedalusCompiler.Compilation
                             instructions.Add(new PushVar(symbol));
                         }
                     }
-                    else if (isInsideReturnStatement && execBlock != null)
+                    else if (isInsideReturnStatement && activeBlock != null)
                     {
-                        if (symbol.Type == DatSymbolType.Instance && execBlock.Symbol.ReturnType == DatSymbolType.Int)
+                        if (symbol.Type == DatSymbolType.Instance && activeBlock.Symbol.ReturnType == DatSymbolType.Int)
                         {
                             instructions.Add(new PushInt(symbol.Index));
                         }
@@ -550,7 +550,12 @@ namespace DaedalusCompiler.Compilation
                             instructions.Add(new PushVar(symbol));
                         }
                     }
-                    else if (isInsideIfCondition && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
+                    /*
+                    PushInstance jest wtedy kiedy instancja jest po lewej stronie przypisania, np.
+                    person = ...
+                    oraz kiedy przekazywana jest jako argument do funkcji, gdy odpowiadający parametr to tez instancja, a w zasadzie klasa
+                    */
+                    else if ((isInsideIfCondition || isInsideAssignment) && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
                     {
                         instructions.Add(new PushInt(symbol.Index));
                     }
@@ -558,6 +563,7 @@ namespace DaedalusCompiler.Compilation
                     {
                         instructions.Add(new PushInstance(symbol));
                     }
+                    
                     else
                     {
                         instructions.Add(new PushVar(symbol));
@@ -570,11 +576,24 @@ namespace DaedalusCompiler.Compilation
             }
             else if (complexReferenceNodes.Length > 1)
             {
-                string typeName = _assemblyBuilder.Symbols[symbol.ParentIndex].Name;
+                
                 var attributePart = complexReferenceNodes[1];
-                string attributeName = attributePart.referenceNode().GetText();                
-                DatSymbol attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}", activeBlock);
-
+                string attributeName = attributePart.referenceNode().GetText();
+                DatSymbol attribute;
+                
+                if ( activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Instance) && symbol == activeBlock.Symbol)
+                {
+                    attribute = _assemblyBuilder.ResolveSymbol(attributeName);
+                }
+                else
+                {
+                    string typeName = _assemblyBuilder.Symbols[symbol.ParentIndex].Name;
+                    
+                    attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
+                }
+                
+                
+                
                 
                 var simpleValueContext = attributePart.simpleValue();
                 int arrIndex = 0;
@@ -582,7 +601,7 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
                     {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText(), activeBlock);
+                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
                         if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
                         {
                             throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
@@ -618,11 +637,6 @@ namespace DaedalusCompiler.Compilation
         }
 
         
-        private DatSymbol GetSymbolFromComplexReferenceNode(DaedalusParser.ComplexReferenceNodeContext complexReferenceNode, ExecBlock execBlock)
-        {
-            return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText(), execBlock);
-        }
-        
         private DatSymbol GetSymbolFromComplexReferenceNode(DaedalusParser.ComplexReferenceNodeContext complexReferenceNode)
         {
             return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
@@ -654,33 +668,31 @@ namespace DaedalusCompiler.Compilation
         {
             _assemblyBuilder.IsInsideAssignment = true;
             var complexReferenceNodes = context.complexReferenceLeftSide().complexReferenceNode();
-            DatSymbol assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]);
             List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
-            try
-            {
-                _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(),
-                    item => (SymbolInstruction) item));
-            }
-            catch (System.InvalidCastException)
-            {
-                Console.WriteLine("huh");
-            }
+            _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
 
+            
+            // TODO, what if it's array element, then assignment Symbol will be array,
+            // TODO  or what if it's class attribute that is instance of another class?
+            // GetComplexReferenceNodeInstructions
+            /*
+            if (_assemblyBuilder.ActiveExecBlock.Symbol.Type == DatSymbolType.Instance || _assemblyBuilder.ActiveExecBlock.Symbol.Type == DatSymbolType.Prototype)
+            {
+                string symbolName = complexReferenceNodes[0].referenceNode().GetText();
+                if (symbolName == "self" || symbolName == "slf")
+                {
+                    
+                }
+            }
+            */
+            DatSymbol assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]); 
             if (assigmentSymbol.Type == DatSymbolType.Float)
             {
                 _assemblyBuilder.IsInsideFloatAssignment = true;
             }
-            /*
-            if (assigmentSymbol.Type == DatSymbolType.Float) // TODO?
-            {
-                var parsedFloat = EvaluatorHelper.EvaluateFloatExpression(context.expressionBlock().GetText());
-                _assemblyBuilder.AddInstruction(new PushInt(parsedFloat));
-                _assemblyBuilder.IsInsideEvalableStatement = true; // we invoke here 
-            }
-            */
+
         }
-
-
+ 
         public override void ExitAssignment(DaedalusParser.AssignmentContext context)
         {
             _assemblyBuilder.IsInsideAssignment = false;
@@ -688,7 +700,6 @@ namespace DaedalusCompiler.Compilation
             
             string assignmentOperator = context.assigmentOperator().GetText();
 
-            //_assemblyBuilder.IsInsideEvalableStatement = false;
             _assemblyBuilder.AssigmentEnd(assignmentOperator);
         }
 
