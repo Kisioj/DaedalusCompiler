@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using DaedalusCompiler.Compilation;
 using DaedalusCompiler.Dat;
 using Xunit;
+using AssemblyBuilder = DaedalusCompiler.Compilation.AssemblyBuilder;
 
 namespace DaedalusCompiler.Tests
 {
@@ -309,6 +311,47 @@ namespace DaedalusCompiler.Tests
             _expectedSymbols = new List<DatSymbol>
             {
                 Ref("x"),
+                Ref("testFunc"),
+            };
+            AssertSymbolsMatch();
+        }
+        
+        [Fact]
+        public void TestInstanceAssignment()
+        {
+            _externalCode = @"
+                func instance HLP_GetNpc(var int par0) {};
+            ";
+            _code = @"
+                class C_NPC { var int data [200]; };
+                var C_NPC person;
+                
+                func void  testFunc()
+                {
+                    person = HLP_GetNpc (0);
+                };
+            ";
+
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // person = HLP_GetNpc (0);
+                new PushInt(0),
+                new CallExternal(Ref("HLP_GetNpc")),
+                new PushInstance(Ref("person")),
+                new AssignInstance(),
+
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("HLP_GetNpc"),
+                Ref("HLP_GetNpc.par0"),
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("person"),
                 Ref("testFunc"),
             };
             AssertSymbolsMatch();
@@ -3151,6 +3194,198 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc"),
                 Ref("testFunc.wait"),
                 Ref("testFunc.waitTime"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        
+        [Fact]
+        public void TestKeywordsSelfAndSlf()
+        {
+            _externalCode = @"
+                func void WLD_PlayEffect(var string par0, var instance par1, var instance par2, var int par3, var int par4, var int par5, var int par6) {};
+                func void NPC_ChangeAttribute(var instance par0, var int par1, var int par2) {};
+                func void CreateInvItems(var instance par0, var int par1, var int par2) {};
+                
+            ";
+            _code = @"
+                const int ATR_STRENGTH =  4;
+                const int ATR_DEXTERITY =  5;
+                const int ATR_INDEX_MAX	=  8;
+                
+                class C_NPC 
+                {	
+                    var int attribute[ATR_INDEX_MAX];
+                };		
+                
+                prototype NPC_Default (C_NPC)
+                {
+                    attribute[ATR_STRENGTH] = 10;
+                    attribute[ATR_DEXTERITY] = 20;
+                };
+                
+                instance self(C_NPC);
+                instance sword(C_NPC);
+                
+                func void useJoint()
+                {
+                    if (NPC_IsPlayer (self))
+                    {
+                        WLD_PlayEffect(""SLOW_TIME"", self, self, 0, 0, 0, 0);
+                    };
+                };
+                
+                func void gainStrength(var C_NPC slf, var int spell, var int mana)
+                {
+                    if (slf.attribute[ATR_STRENGTH] < 10)
+                    {
+                        NPC_ChangeAttribute(slf, ATR_STRENGTH, 10);
+                    };
+                    NPC_ChangeAttribute(slf, ATR_STRENGTH, ATR_STRENGTH + 1);
+                };
+                
+                instance Geralt (NPC_Default)
+                {
+                slf.attribute[ATR_STRENGTH] = 10;
+                self.attribute[ATR_DEXTERITY] = 10;
+                                                            
+                // CreateInvItems (slf, sword, 1); // cannot use slf alone
+                CreateInvItems(self, sword, 2);
+                gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
+                };
+            ";
+            char prefix = (char) 255;
+            
+            _instructions = GetExecBlockInstructions("NPC_Default");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // attribute[ATR_STRENGTH] = 10;
+                new PushInt(10),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new Assign(),
+                
+                // attribute[ATR_DEXTERITY] = 20;
+                new PushInt(20),
+                new PushArrayVar(Ref("C_NPC.attribute"), 5),
+                new Assign(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("useJoint");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // if (NPC_IsPlayer (self))
+                new PushInstance(Ref("self")),
+                new CallExternal(Ref("NPC_IsPlayer")),
+                new JumpIfToLabel("label_0"),
+                
+                // WLD_PlayEffect(""SLOW_TIME"", self, self, 0, 0, 0, 0);
+                new PushVar(Ref($"{prefix}10000")),
+                new PushInstance(Ref("self")),
+                new PushInstance(Ref("self")),
+                new PushInt(0),
+                new PushInt(0),
+                new PushInt(0),
+                new PushInt(0),
+                new CallExternal(Ref("WLD_PlayEffect")),
+                
+                // endif
+                new AssemblyLabel("label_0"),
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("gainStrength");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new PushVar(Ref("gainStrength.mana")),
+                new Assign(),
+                new PushVar(Ref("gainStrength.self")),
+                new Assign(),
+                new PushInstance(Ref("gainStrength.slf")),
+                new AssignInstance(),
+                
+                // if (slf.attribute[ATR_STRENGTH] < 10)
+                new PushInt(10),
+                new SetInstance(Ref("gainStrength.slf")),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new Less(),
+                new JumpIfToLabel("label_0"),
+                
+                // NPC_ChangeAttribute(slf, ATR_STRENGTH, 10);
+                new PushInstance(Ref("gainStrength.slf")),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushInt(10),
+                new CallExternal(Ref("NPC_ChangeAttribute")),
+                
+                // endif
+                new AssemblyLabel("label_0"),
+                
+                // NPC_ChangeAttribute(slf, ATR_STRENGTH, ATR_STRENGTH + 1);
+                new PushInstance(Ref("gainStrength.slf")),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushInt(1),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new Add(),
+                new CallExternal(Ref("NPC_ChangeAttribute")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("Geralt");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parameters
+                new Call(Ref("NPC_Default")),
+                
+                // slf.attribute[ATR_STRENGTH] = 10;
+                new PushInt(10),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new Assign(),
+                
+                // self.attribute[ATR_DEXTERITY] = 10;
+                new PushInt(10),
+                new PushArrayVar(Ref("C_NPC.attribute"), 5),
+                new Assign(),
+                                                            
+                // CreateInvItems(self, sword, 2);
+                new PushInstance(Ref("Geralt")),
+                new PushInt(RefIndex("sword")),
+                new PushInt(2),
+                new CallExternal(Ref("CreateInvItems")),
+                
+                // gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
+                new PushInstance(Ref("Geralt")),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushArrayVar(Ref("C_NPC.attribute"), 5),
+                new Call(Ref("gainStrength")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("WLD_PlayEffect"),
+                Ref("NPC_ChangeAttribute"),
+                Ref("CreateInvItems"),
+                
+                Ref("C_NPC"),
+                Ref("C_NPC.attribute"),
+                Ref("NPC_Default"),
+                Ref("self"),
+                Ref("sword"),
+                Ref("useJoint"),
+                Ref("gainStrength"),
+                Ref("gainStrength.slf"),
+                Ref("gainStrength.self"),
+                Ref("gainStrength.mana"),
+                Ref("Geralt"),
+                Ref($"{prefix}10000"),
             };
             AssertSymbolsMatch(); 
         }

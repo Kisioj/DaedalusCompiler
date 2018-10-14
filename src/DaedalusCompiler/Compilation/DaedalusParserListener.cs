@@ -550,9 +550,13 @@ namespace DaedalusCompiler.Compilation
                             instructions.Add(new PushVar(symbol));
                         }
                     }
-                    else if (symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
+                    else if (isInsideIfCondition && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
                     {
                         instructions.Add(new PushInt(symbol.Index));
+                    }
+                    else if (symbol.Type == DatSymbolType.Instance)
+                    {
+                        instructions.Add(new PushInstance(symbol));
                     }
                     else
                     {
@@ -652,7 +656,15 @@ namespace DaedalusCompiler.Compilation
             var complexReferenceNodes = context.complexReferenceLeftSide().complexReferenceNode();
             DatSymbol assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]);
             List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
-            _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
+            try
+            {
+                _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(),
+                    item => (SymbolInstruction) item));
+            }
+            catch (System.InvalidCastException)
+            {
+                Console.WriteLine("huh");
+            }
 
             if (assigmentSymbol.Type == DatSymbolType.Float)
             {

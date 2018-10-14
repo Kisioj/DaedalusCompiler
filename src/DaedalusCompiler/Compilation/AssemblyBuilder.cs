@@ -448,9 +448,8 @@ namespace DaedalusCompiler.Compilation
 
         public void AssigmentEnd(string assignmentOperator)
         {
-            var operationType =
-                _assignmentLeftSide.Last().Symbol
-                    .Type; //TODO check if there are any possibilities of assignmentLeftSide longer than 2 instructions?
+            //TODO check if there are any possibilities of assignmentLeftSide longer than 2 instructions?
+            var operationType =_assignmentLeftSide.Last().Symbol.Type;
             var assignmentInstruction =
                 AssemblyBuilderHelpers.GetInstructionForOperator(assignmentOperator, true, operationType);
 
