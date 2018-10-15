@@ -3339,7 +3339,7 @@ namespace DaedalusCompiler.Tests
                 // parameters
                 new PushVar(Ref("gainStrength.mana")),
                 new Assign(),
-                new PushVar(Ref("gainStrength.self")),
+                new PushVar(Ref("gainStrength.spell")),
                 new Assign(),
                 new PushInstance(Ref("gainStrength.slf")),
                 new AssignInstance(),
@@ -3349,22 +3349,22 @@ namespace DaedalusCompiler.Tests
                 new SetInstance(Ref("gainStrength.slf")),
                 new PushArrayVar(Ref("C_NPC.attribute"), 4),
                 new Less(),
-                new JumpIfToLabel("label_0"),
+                new JumpIfToLabel("label_1"),
                 
                 // NPC_ChangeAttribute(slf, ATR_STRENGTH, 10);
                 new PushInstance(Ref("gainStrength.slf")),
-                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushVar(Ref("ATR_STRENGTH")),
                 new PushInt(10),
                 new CallExternal(Ref("NPC_ChangeAttribute")),
                 
                 // endif
-                new AssemblyLabel("label_0"),
+                new AssemblyLabel("label_1"),
                 
                 // NPC_ChangeAttribute(slf, ATR_STRENGTH, ATR_STRENGTH + 1);
                 new PushInstance(Ref("gainStrength.slf")),
-                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushVar(Ref("ATR_STRENGTH")),
                 new PushInt(1),
-                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushVar(Ref("ATR_STRENGTH")),
                 new Add(),
                 new CallExternal(Ref("NPC_ChangeAttribute")),
                 
@@ -3425,6 +3425,9 @@ namespace DaedalusCompiler.Tests
                 Ref("CreateInvItems.par1"),
                 Ref("CreateInvItems.par2"),
                 
+                Ref("ATR_STRENGTH"),
+                Ref("ATR_DEXTERITY"),
+                Ref("ATR_INDEX_MAX"),
                 Ref("C_NPC"),
                 Ref("C_NPC.attribute"),
                 Ref("NPC_Default"),
@@ -3433,7 +3436,7 @@ namespace DaedalusCompiler.Tests
                 Ref("useJoint"),
                 Ref("gainStrength"),
                 Ref("gainStrength.slf"),
-                Ref("gainStrength.self"),
+                Ref("gainStrength.spell"),
                 Ref("gainStrength.mana"),
                 Ref("Geralt"),
                 Ref($"{prefix}10000"),

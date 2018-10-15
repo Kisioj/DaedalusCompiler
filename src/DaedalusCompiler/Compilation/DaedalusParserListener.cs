@@ -480,23 +480,20 @@ namespace DaedalusCompiler.Compilation
             bool isInsideAssignment = _assemblyBuilder.IsInsideAssignment;
             bool isInsideIfCondition = _assemblyBuilder.IsInsideIfCondition;
             bool isInsideReturnStatement = _assemblyBuilder.IsInsideReturnStatement;
-            
 
-            
             var symbolPart = complexReferenceNodes[0];
-            var symbolName = symbolPart.referenceNode().GetText();
+            string symbolName = symbolPart.referenceNode().GetText();
+            
             DatSymbol symbol;
-
             if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
             {
                 symbol = activeBlock.Symbol;
             }
             else
             {
-               symbol = GetSymbolFromComplexReferenceNode(symbolPart);
+                symbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]);
             }
-                
-            
+
             if (complexReferenceNodes.Length == 1)
             {
                 var simpleValueContext = symbolPart.simpleValue();
@@ -530,7 +527,7 @@ namespace DaedalusCompiler.Compilation
                         {
                             instructions.Add(new PushInt(symbol.Index));
                         }
-                        else if (symbol.Type == DatSymbolType.Instance && (parameterType == DatSymbolType.Class || parameterType == DatSymbolType.Instance))
+                        else if ( (symbol.Type == DatSymbolType.Instance || symbol.Type == DatSymbolType.Class) && (parameterType == DatSymbolType.Class || parameterType == DatSymbolType.Instance))
                         {
                             instructions.Add(new PushInstance(symbol));
                         }
@@ -610,23 +607,25 @@ namespace DaedalusCompiler.Compilation
                         arrIndex = (int) constSymbol.Content[0];
                     }
                 }
+
+                List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
                 
+                
+                if (activeBlock != null && symbol != activeBlock.Symbol)
+                {
+                    instructions.Add(new SetInstance(symbol));
+                }
+
                 if (arrIndex > 0)
                 {
-                    return new List<AssemblyInstruction>
-                    {
-                        new SetInstance(symbol),
-                        new PushArrayVar(attribute, arrIndex)
-                    };
+                    instructions.Add(new PushArrayVar(attribute, arrIndex));
                 }
                 else
                 {
-                    return new List<AssemblyInstruction>
-                    {
-                        new SetInstance(symbol),
-                        new PushVar(attribute)
-                    };
+                    instructions.Add(new PushVar(attribute));
                 }
+
+                return instructions;
             }
             else
             {
@@ -637,10 +636,7 @@ namespace DaedalusCompiler.Compilation
         }
 
         
-        private DatSymbol GetSymbolFromComplexReferenceNode(DaedalusParser.ComplexReferenceNodeContext complexReferenceNode)
-        {
-            return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
-        }
+        
 
         public override void ExitComplexReference(DaedalusParser.ComplexReferenceContext context)
         {
@@ -663,7 +659,53 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
+        private DatSymbol GetComplexReferenceNodeSymbol(DaedalusParser.ComplexReferenceNodeContext complexReferenceNode)
+        {
+            return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
+        }
+        /*
+        private DatSymbol GetComplexReferenceNodeSymbol(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
+        {
+            
+            
+            ExecBlock activeBlock = _assemblyBuilder.ActiveExecBlock;
+            var leftPart = complexReferenceNodes[0];
+            string leftPartSymbolName = leftPart.referenceNode().GetText();
 
+            
+            DatSymbol leftPartSymbol;
+
+            if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
+            {
+                leftPartSymbol = activeBlock.Symbol;
+            }
+            else
+            {
+                leftPartSymbol =_assemblyBuilder.ResolveSymbol(leftPartSymbolName);
+            }
+
+            var simpleValueContext = symbolPart.simpleValue();
+            int leftPartArrayIndex = 0;
+            if (simpleValueContext != null)
+            {
+                if (!int.TryParse(simpleValueContext.GetText(), out leftPartArrayIndex))
+                {
+                    var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
+                    if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
+                    {
+                        throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
+                    }
+
+                    leftPartArrayIndex = (int) constSymbol.Content[0];
+                }
+            }
+            
+            return leftPartSymbol;
+            //return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
+        }
+        */
+        
+        
         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
         {
             
@@ -685,7 +727,12 @@ namespace DaedalusCompiler.Compilation
                 }
             }
             */
-            DatSymbol assigmentSymbol = GetSymbolFromComplexReferenceNode(complexReferenceNodes[0]); 
+            if (complexReferenceNodes[0].GetText() == "self" || complexReferenceNodes[0].GetText() == "slf")
+            {
+                return;
+            }
+            
+            DatSymbol assigmentSymbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]); 
             if (assigmentSymbol.Type == DatSymbolType.Float)
             {
                 _assemblyBuilder.IsInsideFloatAssignment = true;
