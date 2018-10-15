@@ -3252,12 +3252,28 @@ namespace DaedalusCompiler.Tests
                 class C_NPC 
                 {	
                     var int attribute[ATR_INDEX_MAX];
+                    var int flags;
+                    var float price;
+	                var float prices[2];
                 };		
                 
                 prototype NPC_Default (C_NPC)
                 {
+                    var int x;
+                    x = 1;
                     attribute[ATR_STRENGTH] = 10;
                     attribute[ATR_DEXTERITY] = 20;
+
+                    price = 0;
+                    price = 0.5;
+                    slf.price = 1;
+                    slf.price = 1.5;
+                    self.price = 2;
+                    self.price = 2.5;
+                    prices[0] = 3;
+                    prices[0] = 3.5;
+                    slf.prices[1] = 4;
+                    slf.prices[1] = 4.5;
                 };
                 
                 instance self(C_NPC);
@@ -3282,12 +3298,29 @@ namespace DaedalusCompiler.Tests
                 
                 instance Geralt (NPC_Default)
                 {
+                    var int y;
+                    y = 5;
                     slf.attribute[ATR_STRENGTH] = 10;
                     self.attribute[ATR_DEXTERITY] = 10;
                                                                 
                     // CreateInvItems (slf, sword, 1); // cannot use slf alone
                     CreateInvItems(self, sword, 2);
                     gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
+
+                    price = 0;
+                    price = 0.5;
+                    slf.price = 1;
+                    slf.price = 1.5;
+                    self.price = 2;
+                    self.price = 2.5;
+                    prices[0] = 3;
+                    prices[0] = 3.5;
+                    slf.prices[1] = 4;
+                    slf.prices[1] = 4.5;
+                };
+
+                func void testFunc() {
+                    Geralt.flags = 0;
                 };
             ";
             char prefix = (char) 255;
@@ -3295,6 +3328,11 @@ namespace DaedalusCompiler.Tests
             _instructions = GetExecBlockInstructions("NPC_Default");
             _expectedInstructions = new List<AssemblyElement>
             {
+                // x = 1;
+                new PushInt(1),
+                new PushVar(Ref("NPC_Default.x")),
+                new Assign(),
+                
                 // attribute[ATR_STRENGTH] = 10;
                 new PushInt(10),
                 new PushArrayVar(Ref("C_NPC.attribute"), 4),
@@ -3304,6 +3342,56 @@ namespace DaedalusCompiler.Tests
                 new PushInt(20),
                 new PushArrayVar(Ref("C_NPC.attribute"), 5),
                 new Assign(),
+                
+                // price = 0;
+                new PushInt(0),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // price = 0.5;
+                new PushInt(1056964608),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // slf.price = 1;
+                new PushInt(1065353216),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // slf.price = 1.5;
+                new PushInt(1069547520),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+
+                // self.price = 2;
+                new PushInt(1073741824),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+
+                // self.price = 2.5;
+                new PushInt(1075838976),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // prices[0] = 3;
+                new PushInt(1077936128),
+                new PushVar(Ref("C_NPC.prices")),
+                new AssignFloat(),
+                
+                // prices[0] = 3.5;
+                new PushInt(1080033280),
+                new PushVar(Ref("C_NPC.prices")),
+                new AssignFloat(),
+                
+                // slf.prices[1] = 4;
+                new PushInt(1082130432),
+                new PushArrayVar(Ref("C_NPC.prices"), 1),
+                new AssignFloat(),
+                
+                // slf.prices[1] = 4.5;
+                new PushInt(1083179008),
+                new PushArrayVar(Ref("C_NPC.prices"), 1),
+                new AssignFloat(),
                 
                 new Ret(),
             };
@@ -3378,6 +3466,11 @@ namespace DaedalusCompiler.Tests
                 // parameters
                 new Call(Ref("NPC_Default")),
                 
+                // y = 5;
+                new PushInt(5),
+                new PushVar(Ref("Geralt.y")),
+                new Assign(),
+                
                 // slf.attribute[ATR_STRENGTH] = 10;
                 new PushInt(10),
                 new PushArrayVar(Ref("C_NPC.attribute"), 4),
@@ -3399,6 +3492,69 @@ namespace DaedalusCompiler.Tests
                 new PushArrayVar(Ref("C_NPC.attribute"), 4),
                 new PushArrayVar(Ref("C_NPC.attribute"), 5),
                 new Call(Ref("gainStrength")),
+                
+                // price = 0;
+                new PushInt(0),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // price = 0.5;
+                new PushInt(1056964608),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // slf.price = 1;
+                new PushInt(1065353216),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // slf.price = 1.5;
+                new PushInt(1069547520),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+
+                // self.price = 2;
+                new PushInt(1073741824),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+
+                // self.price = 2.5;
+                new PushInt(1075838976),
+                new PushVar(Ref("C_NPC.price")),
+                new AssignFloat(),
+                
+                // prices[0] = 3;
+                new PushInt(1077936128),
+                new PushVar(Ref("C_NPC.prices")),
+                new AssignFloat(),
+                
+                // prices[0] = 3.5;
+                new PushInt(1080033280),
+                new PushVar(Ref("C_NPC.prices")),
+                new AssignFloat(),
+                
+                // slf.prices[1] = 4;
+                new PushInt(1082130432),
+                new PushArrayVar(Ref("C_NPC.prices"), 1),
+                new AssignFloat(),
+                
+                // slf.prices[1] = 4.5;
+                new PushInt(1083179008),
+                new PushArrayVar(Ref("C_NPC.prices"), 1),
+                new AssignFloat(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // Geralt.flags = 0;
+                new PushInt(0),
+                new SetInstance(Ref("Geralt")),
+                new PushVar(Ref("C_NPC.flags")),
+                new Assign(),
                 
                 new Ret(),
             };
@@ -3430,7 +3586,11 @@ namespace DaedalusCompiler.Tests
                 Ref("ATR_INDEX_MAX"),
                 Ref("C_NPC"),
                 Ref("C_NPC.attribute"),
+                Ref("C_NPC.flags"),
+                Ref("C_NPC.price"),
+                Ref("C_NPC.prices"),
                 Ref("NPC_Default"),
+                Ref("NPC_Default.x"),
                 Ref("self"),
                 Ref("sword"),
                 Ref("useJoint"),
@@ -3439,6 +3599,8 @@ namespace DaedalusCompiler.Tests
                 Ref("gainStrength.spell"),
                 Ref("gainStrength.mana"),
                 Ref("Geralt"),
+                Ref("Geralt.y"),
+                Ref("testFunc"),
                 Ref($"{prefix}10000"),
             };
             AssertSymbolsMatch(); 

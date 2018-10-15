@@ -578,6 +578,7 @@ namespace DaedalusCompiler.Compilation
                 string attributeName = attributePart.referenceNode().GetText();
                 DatSymbol attribute;
                 
+                /*
                 if ( activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Instance) && symbol == activeBlock.Symbol)
                 {
                     attribute = _assemblyBuilder.ResolveSymbol(attributeName);
@@ -588,8 +589,18 @@ namespace DaedalusCompiler.Compilation
                     
                     attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
                 }
+                */
+
+
+                DatSymbol parent = _assemblyBuilder.Symbols[symbol.ParentIndex];
+                if (symbol.Type == DatSymbolType.Instance && parent.Type == DatSymbolType.Prototype)
+                {
+                    parent = _assemblyBuilder.Symbols[parent.ParentIndex];
+                }
                 
-                
+                string typeName = parent.Name;
+                    
+                attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
                 
                 
                 var simpleValueContext = attributePart.simpleValue();
