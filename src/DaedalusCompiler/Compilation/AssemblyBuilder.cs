@@ -740,8 +740,51 @@ namespace DaedalusCompiler.Compilation
 
         }
         */
-        
-        
+
+        /*
+         *
+         jeżeli jest kropka w środku to resolve attribute
+         */
+        public DatSymbol ResolveAttribute(DatSymbol symbol, string attributeName)
+        {
+            string attributePath = $"{symbol.Name}.{attributeName}";
+
+            DatSymbol attributeSymbol = null;
+            
+            while (symbol != null)
+            {
+                attributeSymbol = Symbols.Find(x => x.Name.ToUpper() == attributePath.ToUpper());
+                if (attributeSymbol == null)
+                {
+                    if (symbol.ParentIndex == -1)
+                    {
+                        break;
+                    }
+
+                    symbol = Symbols[symbol.ParentIndex];
+                    attributePath = $"{symbol.Name}.{attributeName}";
+                    
+                    if (symbol.Type == DatSymbolType.Prototype && symbol.ParentIndex != -1)
+                    {
+                        symbol = Symbols[symbol.ParentIndex];
+                        attributePath = $"{symbol.Name}.{attributeName}";
+                    }
+                    
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+            if (attributeSymbol == null)
+            {
+                throw new Exception($"attributeSymbol {symbol.Name}.{attributeName} is not added");
+            }
+
+            return attributeSymbol;
+            
+        }
         
         public DatSymbol ResolveSymbol(string symbolName)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
@@ -591,16 +592,33 @@ namespace DaedalusCompiler.Compilation
                 }
                 */
 
-
+                /*
                 DatSymbol parent = _assemblyBuilder.Symbols[symbol.ParentIndex];
+                
+                if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype))
+                {
+                    parent = symbol;
+                }
+                */
+                
+                /*
+                if (symbol.Type == DatSymbolType.Instance || symbol.Type == DatSymbolType.Prototype)
+                {
+                    parent = symbol;
+                }
+                */
+                /*
                 if (symbol.Type == DatSymbolType.Instance && parent.Type == DatSymbolType.Prototype)
                 {
-                    parent = _assemblyBuilder.Symbols[parent.ParentIndex];
+                    // parent = _assemblyBuilder.Symbols[parent.ParentIndex];
+                    parent = symbol;
                 }
+                */
                 
-                string typeName = parent.Name;
-                    
-                attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
+                //string typeName = parent.Name;
+
+                attribute = _assemblyBuilder.ResolveAttribute(symbol, attributeName);
+                //attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
                 
                 
                 var simpleValueContext = attributePart.simpleValue();
@@ -715,6 +733,42 @@ namespace DaedalusCompiler.Compilation
             //return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
         }
         */
+
+        
+        public DatSymbolType GetComplexReferenceType(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
+        {
+            string leftPart = complexReferenceNodes[0].referenceNode().GetText();
+
+            DatSymbol symbol = null;
+
+            DatSymbol activeSymbol = _assemblyBuilder.ActiveExecBlock.Symbol;
+            if ((activeSymbol.Type == DatSymbolType.Instance || activeSymbol.Type == DatSymbolType.Prototype) && (leftPart == "slf" || leftPart == "self"))
+            {
+                symbol = activeSymbol;
+            }
+            else
+            {
+                symbol = _assemblyBuilder.ResolveSymbol(leftPart);
+            }
+
+            
+            
+            
+            
+            if (complexReferenceNodes.Length == 1)
+            {
+                return symbol.Type;
+
+            }
+            if (complexReferenceNodes.Length == 2)
+            {
+                string rightPart = complexReferenceNodes[1].referenceNode().GetText();
+                DatSymbol attribute = _assemblyBuilder.ResolveAttribute(symbol, rightPart);
+                return attribute.Type;
+            }
+
+            return DatSymbolType.Void;
+        }
         
         
         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
@@ -738,6 +792,8 @@ namespace DaedalusCompiler.Compilation
                 }
             }
             */
+            
+            /*
             if (complexReferenceNodes[0].GetText() == "self" || complexReferenceNodes[0].GetText() == "slf")
             {
                 return;
@@ -745,6 +801,11 @@ namespace DaedalusCompiler.Compilation
             
             DatSymbol assigmentSymbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]); 
             if (assigmentSymbol.Type == DatSymbolType.Float)
+            {
+                _assemblyBuilder.IsInsideFloatAssignment = true;
+            }
+            */
+            if (GetComplexReferenceType(complexReferenceNodes) == DatSymbolType.Float)
             {
                 _assemblyBuilder.IsInsideFloatAssignment = true;
             }

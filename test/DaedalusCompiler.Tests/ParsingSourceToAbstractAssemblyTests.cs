@@ -3261,6 +3261,7 @@ namespace DaedalusCompiler.Tests
                 {
                     var int x;
                     x = 1;
+                    slf.x = 2;
                     attribute[ATR_STRENGTH] = 10;
                     attribute[ATR_DEXTERITY] = 20;
 
@@ -3299,7 +3300,11 @@ namespace DaedalusCompiler.Tests
                 instance Geralt (NPC_Default)
                 {
                     var int y;
+                    var int attribute[ATR_INDEX_MAX];
                     y = 5;
+                    // self.y = 6; not working, looking for y in C_NPC
+                    slf.y = 6;
+
                     slf.attribute[ATR_STRENGTH] = 10;
                     self.attribute[ATR_DEXTERITY] = 10;
                                                                 
@@ -3330,6 +3335,11 @@ namespace DaedalusCompiler.Tests
             {
                 // x = 1;
                 new PushInt(1),
+                new PushVar(Ref("NPC_Default.x")),
+                new Assign(),
+                
+                // slf.x = 2;
+                new PushInt(2),
                 new PushVar(Ref("NPC_Default.x")),
                 new Assign(),
                 
@@ -3471,9 +3481,14 @@ namespace DaedalusCompiler.Tests
                 new PushVar(Ref("Geralt.y")),
                 new Assign(),
                 
+                // slf.y = 6;
+                new PushInt(6),
+                new PushVar(Ref("Geralt.y")),
+                new Assign(),
+                
                 // slf.attribute[ATR_STRENGTH] = 10;
                 new PushInt(10),
-                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushArrayVar(Ref("Geralt.attribute"), 4),
                 new Assign(),
                 
                 // self.attribute[ATR_DEXTERITY] = 10;
@@ -3489,7 +3504,7 @@ namespace DaedalusCompiler.Tests
                 
                 // gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
                 new PushInstance(Ref("Geralt")),
-                new PushArrayVar(Ref("C_NPC.attribute"), 4),
+                new PushArrayVar(Ref("Geralt.attribute"), 4),
                 new PushArrayVar(Ref("C_NPC.attribute"), 5),
                 new Call(Ref("gainStrength")),
                 
@@ -3600,6 +3615,7 @@ namespace DaedalusCompiler.Tests
                 Ref("gainStrength.mana"),
                 Ref("Geralt"),
                 Ref("Geralt.y"),
+                Ref("Geralt.attribute"),
                 Ref("testFunc"),
                 Ref($"{prefix}10000"),
             };
