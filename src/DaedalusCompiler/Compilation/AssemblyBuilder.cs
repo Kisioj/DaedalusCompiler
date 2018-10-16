@@ -346,7 +346,9 @@ namespace DaedalusCompiler.Compilation
         public bool IsInsideIfCondition;
         public bool IsInsideReturnStatement;
         public List<DatSymbolType> ParametersTypes;
+        public readonly Stack<List<DatSymbolType>> ParametersTypesStack;
         public int ArgIndex;
+        public readonly Stack<int> ArgIndexStack;
         private int _nextSymbolIndex;
 
         public AssemblyBuilder()
@@ -367,8 +369,10 @@ namespace DaedalusCompiler.Compilation
             IsInsideAssignment = false;
             IsInsideFloatAssignment = false;
             IsInsideReturnStatement = false;
-            ParametersTypes = new List<DatSymbolType>();
-            ArgIndex = -1;
+            // ParametersTypes = new List<DatSymbolType>();
+            ParametersTypesStack = new Stack<List<DatSymbolType>>();
+            // ArgIndex = -1;
+            ArgIndexStack = new Stack<int>();
             _nextSymbolIndex = 0;
         }
 
@@ -380,7 +384,12 @@ namespace DaedalusCompiler.Compilation
             }
             catch (System.ArgumentOutOfRangeException)
             {
-                Console.WriteLine("Hello");
+                Console.WriteLine("return ParametersTypes[ArgIndex];");
+                return ParametersTypes[ArgIndex];
+            }
+            catch (System.NullReferenceException)
+            {
+                Console.WriteLine("return ParametersTypes[ArgIndex];");
                 return ParametersTypes[ArgIndex];
             }
         }
@@ -499,6 +508,14 @@ namespace DaedalusCompiler.Compilation
         {
             _funcArgsBodyCtx = new FuncArgsBodyContext(_funcArgsBodyCtx);
 
+            if (IsInsideArgList)
+            {
+                ArgIndexStack.Push(ArgIndex);
+                ParametersTypesStack.Push(ParametersTypes);
+            }
+
+            ArgIndex = -1;
+            ParametersTypes = new List<DatSymbolType>();
             IsInsideArgList = true;
             
         }
@@ -510,10 +527,17 @@ namespace DaedalusCompiler.Compilation
             _currentBuildCtx.Body.Add(instruction);
 
             _funcArgsBodyCtx = _funcArgsBodyCtx.Parent;
+
+            if (ArgIndexStack.Count > 0)
+            {
+                ArgIndex = ArgIndexStack.Pop();
+                ParametersTypes = ParametersTypesStack.Pop();
+            }
+            else
+            {
+                IsInsideArgList = false;
+            }
             
-            IsInsideArgList = false;
-            ParametersTypes = new List<DatSymbolType>();
-            ArgIndex = -1;
         }
 
         public void ExpressionEnd(AssemblyInstruction operatorInstruction)
@@ -672,79 +696,6 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
-
-        /*
-        public DatSymbol GetReferenceSymbol(string symbolName)
-        {
-            
-            
-
-            
-            if (ActiveExecBlock.Symbol.Type == DatSymbolType.Prototype ||
-                ActiveExecBlock.Symbol.Type == DatSymbolType.Instance)
-            {
-                if (symbolName == "slf" || symbolName == "self")
-                {
-                    return ActiveExecBlock.Symbol;
-                }
-            } else if (ActiveExecBlock.Symbol.Type == DatSymbolType.Func)
-            {
-                
-            }
-            
-            
-            
-            DatSymbol symbol;
-
-            if (ActiveExecBlock != null)
-            {
-                DatSymbol currentExecBlockSymbol = ActiveExecBlock.Symbol;
-
-                while (currentExecBlockSymbol != null)
-                {
-                    var targetSymbolName = $"{currentExecBlockSymbol.Name}.{symbolName}";
-
-                    symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
-
-                    if (symbol == null)
-                    {
-                        if (currentExecBlockSymbol.ParentIndex == -1)
-                        {
-                            break;
-                        }
-
-                        currentExecBlockSymbol = Symbols[currentExecBlockSymbol.ParentIndex];
-                    }
-                    else
-                    {
-                        return symbol;
-                    }
-                }
-            }
-
-            symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
-
-            if (symbol == null)
-            {
-                throw new Exception("Symbol " + symbolName + " is not added");
-            }
-
-            return symbol;
-        }
-        
-        
-        public DatSymbol GetComplexReferenceSymbol(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
-        {
-            DaedalusParser.ComplexReferenceNodeContext leftPart = complexReferenceNodes[0];
-            DatSymbol leftPartSymbol = 0;
-
-        }
-        */
-
-        /*
-         *
-         jeżeli jest kropka w środku to resolve attribute
-         */
         public DatSymbol ResolveAttribute(DatSymbol symbol, string attributeName)
         {
             string attributePath = $"{symbol.Name}.{attributeName}";

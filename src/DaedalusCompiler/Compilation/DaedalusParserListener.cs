@@ -524,7 +524,12 @@ namespace DaedalusCompiler.Compilation
                     if (isInsideArgList)
                     {
                         DatSymbolType parameterType = _assemblyBuilder.GetParameterType();
-                        if (symbol.Type == DatSymbolType.Instance && parameterType == DatSymbolType.Int)
+                        
+                        if (symbol.Type == DatSymbolType.Func || parameterType == DatSymbolType.Func) // TODO check this
+                        {
+                            instructions.Add(new PushInt(symbol.Index));
+                        }
+                        else if (symbol.Type == DatSymbolType.Instance && parameterType == DatSymbolType.Int)
                         {
                             instructions.Add(new PushInt(symbol.Index));
                         }
@@ -577,49 +582,7 @@ namespace DaedalusCompiler.Compilation
                 
                 var attributePart = complexReferenceNodes[1];
                 string attributeName = attributePart.referenceNode().GetText();
-                DatSymbol attribute;
-                
-                /*
-                if ( activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Instance) && symbol == activeBlock.Symbol)
-                {
-                    attribute = _assemblyBuilder.ResolveSymbol(attributeName);
-                }
-                else
-                {
-                    string typeName = _assemblyBuilder.Symbols[symbol.ParentIndex].Name;
-                    
-                    attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
-                }
-                */
-
-                /*
-                DatSymbol parent = _assemblyBuilder.Symbols[symbol.ParentIndex];
-                
-                if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype))
-                {
-                    parent = symbol;
-                }
-                */
-                
-                /*
-                if (symbol.Type == DatSymbolType.Instance || symbol.Type == DatSymbolType.Prototype)
-                {
-                    parent = symbol;
-                }
-                */
-                /*
-                if (symbol.Type == DatSymbolType.Instance && parent.Type == DatSymbolType.Prototype)
-                {
-                    // parent = _assemblyBuilder.Symbols[parent.ParentIndex];
-                    parent = symbol;
-                }
-                */
-                
-                //string typeName = parent.Name;
-
-                attribute = _assemblyBuilder.ResolveAttribute(symbol, attributeName);
-                //attribute = _assemblyBuilder.ResolveSymbol($"{typeName}.{attributeName}");
-                
+                DatSymbol attribute = _assemblyBuilder.ResolveAttribute(symbol, attributeName);              
                 
                 var simpleValueContext = attributePart.simpleValue();
                 int arrIndex = 0;
@@ -803,6 +766,15 @@ namespace DaedalusCompiler.Compilation
             
             string funcName = context.funcCall().nameNode().GetText();
             DatSymbol symbol = _assemblyBuilder.GetSymbolByName(funcName);
+
+            /*
+            if (_assemblyBuilder.ParametersTypes.Count > 0)
+            {
+                _assemblyBuilder.ParametersTypesStack.Push(_assemblyBuilder.ParametersTypes);
+                _assemblyBuilder.ParametersTypes = new List<DatSymbolType>();
+            }
+            */
+            
             for (int i = 1; i <= symbol.ParametersCount; ++i)
             {
                 DatSymbol parameter = _assemblyBuilder.Symbols[symbol.Index + i];

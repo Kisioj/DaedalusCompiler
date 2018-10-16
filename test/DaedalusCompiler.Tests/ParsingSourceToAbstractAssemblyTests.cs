@@ -3622,5 +3622,91 @@ namespace DaedalusCompiler.Tests
             AssertSymbolsMatch(); 
         }
         
+        
+        [Fact]
+        public void TestNestedFunctionCallsWithLazyFunctionsAsArguments()
+        {
+            _externalCode = @"
+                func void Info_AddChoice(var int par0, var string par1, var func par2) {};
+            ";
+            _code = @"
+                class C_NPC {
+                    var int data [200];
+                };
+
+                instance other(C_NPC);
+
+
+                func string firstFunc(var string text, var int num)
+                {
+                    return text;
+                };
+                
+                func int secondFunc(var C_NPC oth, var int talent, var int skill)
+                {
+                    return 0;
+                };
+                
+                func void testFunc()
+                {
+                    Info_AddChoice(info, firstFunc(""test"", secondFunc(other, 1, 2)), thirdFunc);
+                };
+        
+                class C_INFO {
+                    var int data[12];
+                };
+                instance info(C_INFO){};
+        
+                func void thirdFunc(){};
+            ";
+            
+            char prefix = (char) 255;
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // Info_AddChoice(info, firstFunc(""test"", secondFunc(other, 1, 2)), thirdFunc);
+                new PushInt(RefIndex("info")),
+                new PushVar(Ref($"{prefix}10000")),
+                new PushInstance(Ref("other")),
+                new PushInt(1),
+                new PushInt(2),
+                new Call(Ref("secondFunc")),
+                new Call(Ref("firstFunc")),
+                new PushInt(RefIndex("thirdFunc")),
+                new CallExternal(Ref("Info_AddChoice")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("Info_AddChoice"),
+                Ref("Info_AddChoice.par0"),
+                Ref("Info_AddChoice.par1"),
+                Ref("Info_AddChoice.par2"),
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("other"),
+                Ref("firstFunc"),
+                Ref("firstFunc.text"),
+                Ref("firstFunc.num"),
+                Ref("secondFunc"),
+                Ref("secondFunc.oth"),
+                Ref("secondFunc.talent"),
+                Ref("secondFunc.skill"),
+                Ref("testFunc"),
+                Ref("C_INFO"),
+                Ref("C_INFO.data"),
+                Ref("info"),
+                Ref("thirdFunc"),
+                Ref($"{prefix}10000"),
+
+            };
+            AssertSymbolsMatch(); 
+        }
+        
     }
 }
