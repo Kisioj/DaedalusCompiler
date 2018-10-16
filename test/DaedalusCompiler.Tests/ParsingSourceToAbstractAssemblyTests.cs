@@ -3300,7 +3300,7 @@ namespace DaedalusCompiler.Tests
                 instance Geralt (NPC_Default)
                 {
                     var int y;
-                    var int attribute[ATR_INDEX_MAX];
+                    // var int attribute[ATR_INDEX_MAX];
                     y = 5;
                     // self.y = 6; not working, looking for y in C_NPC
                     slf.y = 6;
@@ -3488,7 +3488,7 @@ namespace DaedalusCompiler.Tests
                 
                 // slf.attribute[ATR_STRENGTH] = 10;
                 new PushInt(10),
-                new PushArrayVar(Ref("Geralt.attribute"), 4),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4), // Geralt.attribute if there was local variable attribute
                 new Assign(),
                 
                 // self.attribute[ATR_DEXTERITY] = 10;
@@ -3504,7 +3504,7 @@ namespace DaedalusCompiler.Tests
                 
                 // gainStrength(self, slf.attribute[ATR_STRENGTH], self.attribute[ATR_DEXTERITY]);
                 new PushInstance(Ref("Geralt")),
-                new PushArrayVar(Ref("Geralt.attribute"), 4),
+                new PushArrayVar(Ref("C_NPC.attribute"), 4),
                 new PushArrayVar(Ref("C_NPC.attribute"), 5),
                 new Call(Ref("gainStrength")),
                 
@@ -3615,7 +3615,7 @@ namespace DaedalusCompiler.Tests
                 Ref("gainStrength.mana"),
                 Ref("Geralt"),
                 Ref("Geralt.y"),
-                Ref("Geralt.attribute"),
+                // Ref("Geralt.attribute"),
                 Ref("testFunc"),
                 Ref($"{prefix}10000"),
             };

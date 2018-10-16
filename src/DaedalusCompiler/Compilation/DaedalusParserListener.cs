@@ -779,32 +779,6 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
             _assemblyBuilder.IsInsideAssignment = true;
             
-            // TODO, what if it's array element, then assignment Symbol will be array,
-            // TODO  or what if it's class attribute that is instance of another class?
-            // GetComplexReferenceNodeInstructions
-            /*
-            if (_assemblyBuilder.ActiveExecBlock.Symbol.Type == DatSymbolType.Instance || _assemblyBuilder.ActiveExecBlock.Symbol.Type == DatSymbolType.Prototype)
-            {
-                string symbolName = complexReferenceNodes[0].referenceNode().GetText();
-                if (symbolName == "self" || symbolName == "slf")
-                {
-                    
-                }
-            }
-            */
-            
-            /*
-            if (complexReferenceNodes[0].GetText() == "self" || complexReferenceNodes[0].GetText() == "slf")
-            {
-                return;
-            }
-            
-            DatSymbol assigmentSymbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]); 
-            if (assigmentSymbol.Type == DatSymbolType.Float)
-            {
-                _assemblyBuilder.IsInsideFloatAssignment = true;
-            }
-            */
             if (GetComplexReferenceType(complexReferenceNodes) == DatSymbolType.Float)
             {
                 _assemblyBuilder.IsInsideFloatAssignment = true;
