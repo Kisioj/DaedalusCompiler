@@ -797,7 +797,7 @@ namespace DaedalusCompiler.Compilation
 
         public DatSymbol GetSymbolByName(string symbolName)
         {
-            return Symbols.FirstOrDefault(x => x.Name.ToUpper() == symbolName.ToUpper());
+            return SymbolsDict.GetValueOrDefault(symbolName.ToUpper(), null);
         }
 
         private string GetNextLabel()
@@ -890,7 +890,7 @@ namespace DaedalusCompiler.Compilation
             int maxCounter = ExecBlocks.Count;
             foreach (ExecBlock execBlock in ExecBlocks)
             {
-                Console.WriteLine($"{counter++}/{maxCounter}");
+                Console.WriteLine($"{++counter}/{maxCounter}");
                 for (int i = 0; i < execBlock.Body.Count; ++i)
                 {
                     AssemblyElement element = execBlock.Body[i];

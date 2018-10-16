@@ -794,11 +794,19 @@ namespace DaedalusCompiler.Compilation
                 _assemblyBuilder.ParametersTypes = new List<DatSymbolType>();
             }
             */
-            
-            for (int i = 1; i <= symbol.ParametersCount; ++i)
+
+            try
             {
-                DatSymbol parameter = _assemblyBuilder.Symbols[symbol.Index + i];
-                _assemblyBuilder.ParametersTypes.Add(parameter.Type);
+                for (int i = 1; i <= symbol.ParametersCount; ++i)
+                {
+                    DatSymbol parameter = _assemblyBuilder.Symbols[symbol.Index + i];
+                    _assemblyBuilder.ParametersTypes.Add(parameter.Type);
+                }
+            }
+            catch (System.NullReferenceException)
+            {
+                Console.WriteLine($"funcName: {funcName}");
+                throw new Exception("dupa");
             }
         }
 
