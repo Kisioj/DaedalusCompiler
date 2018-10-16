@@ -3626,9 +3626,11 @@ namespace DaedalusCompiler.Tests
         [Fact]
         public void TestNestedFunctionCallsWithLazyFunctionsAsArguments()
         {
-            _externalCode = @"
-                func void Info_AddChoice(var int par0, var string par1, var func par2) {};
-                func int NPC_IsInState(var instance par0, var func par1) {};
+            
+            _externalCode = $@"
+                var instance instance_help;
+                func void Info_AddChoice(var int par0, var string par1, var func par2) {{}};
+                func int NPC_IsInState(var instance par0, var func par1) {{}};
             ";
             _code = @"
                 class C_NPC {
@@ -3651,7 +3653,7 @@ namespace DaedalusCompiler.Tests
                 func void testFunc()
                 {
                     Info_AddChoice(info, firstFunc(""test"", secondFunc(other, 1, 2)), thirdFunc);
-                    NPC_IsInState(info, NOFUNC);
+                    NPC_IsInState(NULL, NOFUNC);
                 };
         
                 class C_INFO {
@@ -3678,10 +3680,10 @@ namespace DaedalusCompiler.Tests
                 new PushInt(RefIndex("thirdFunc")),
                 new CallExternal(Ref("Info_AddChoice")),
                 
-                // NPC_IsInState(info, NOFUNC);
-                new PushInstance(Ref("other")),
+                // NPC_IsInState(NULL, NOFUNC);
+                new PushInstance(Ref($"{prefix}instance_help")), //NULL = {prefix}instance_help
                 new PushInt(-1), //NOFUNC = -1
-                new CallExternal(Ref("NPC_IsInState")),
+                new CallExternal(Ref("NPC_IsInState")), 
                 
                 new Ret(),
             };
@@ -3690,6 +3692,7 @@ namespace DaedalusCompiler.Tests
             
             _expectedSymbols = new List<DatSymbol>
             {
+                Ref($"{prefix}instance_help"),
                 Ref("Info_AddChoice"),
                 Ref("Info_AddChoice.par0"),
                 Ref("Info_AddChoice.par1"),

@@ -330,6 +330,7 @@ namespace DaedalusCompiler.Compilation
     {
         public readonly List<ExecBlock> ExecBlocks;
         public List<DatSymbol> Symbols;
+        public Dictionary<string, DatSymbol> SymbolsDict;
         private readonly List<DatSymbol> _stringLiteralSymbols;
         public ExecBlock ActiveExecBlock;
         private AssemblyBuildContext _currentBuildCtx;
@@ -355,6 +356,7 @@ namespace DaedalusCompiler.Compilation
         {
             ExecBlocks = new List<ExecBlock>();
             Symbols = new List<DatSymbol>();
+            SymbolsDict = new Dictionary<string, DatSymbol>();
             _stringLiteralSymbols = new List<DatSymbol>();
             _currentBuildCtx = GetEmptyBuildContext();
             ActiveExecBlock = null;
@@ -682,7 +684,9 @@ namespace DaedalusCompiler.Compilation
                     symbol.Name = $"{(char) 255}instance_help";
                 }
             }
-                
+            
+            
+            SymbolsDict[symbol.Name.ToUpper()] = symbol;
             if (symbol.Name.StartsWith($"{(char) 255}") && symbol.Type == DatSymbolType.String &&
                 symbol.Flags == DatSymbolFlag.Const)
             {
@@ -704,7 +708,10 @@ namespace DaedalusCompiler.Compilation
             
             while (symbol != null)
             {
-                attributeSymbol = Symbols.Find(x => x.Name.ToUpper() == attributePath.ToUpper());
+                // attributeSymbol = Symbols.Find(x => x.Name.ToUpper() == attributePath.ToUpper());
+                // attributeSymbol = SymbolsDict[attributePath.ToUpper()];
+                attributeSymbol = SymbolsDict.GetValueOrDefault(attributePath.ToUpper(), null);
+                
                 if (attributeSymbol == null)
                 {
                     if (symbol.ParentIndex == -1)
@@ -749,8 +756,11 @@ namespace DaedalusCompiler.Compilation
                 {
                     var targetSymbolName = $"{currentExecBlockSymbol.Name}.{symbolName}";
 
-                    symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
-
+                    // symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
+                    // symbol = SymbolsDict[targetSymbolName.ToUpper()];
+                    symbol = SymbolsDict.GetValueOrDefault(targetSymbolName.ToUpper(), null);
+                    
+                    
                     if (symbol == null)
                     {
                         if (currentExecBlockSymbol.ParentIndex == -1)
@@ -767,8 +777,10 @@ namespace DaedalusCompiler.Compilation
                 }
             }
 
-            symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
-
+            // symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
+            // symbol = SymbolsDict[symbolName.ToUpper()];
+            symbol = SymbolsDict.GetValueOrDefault(symbolName.ToUpper(), null);
+            
             if (symbol == null)
             {
                 throw new Exception("Symbol " + symbolName + " is not added");
@@ -864,10 +876,15 @@ namespace DaedalusCompiler.Compilation
                 symbol.Index = _nextSymbolIndex;
                 _nextSymbolIndex++;
             }
-            Symbols = Symbols.Concat(_stringLiteralSymbols).ToList();
             
+            Symbols = Symbols.Concat(_stringLiteralSymbols).ToList();
+            Console.WriteLine("Concatenated Symbols and _stringLiteralSymbols");
+
+            int counter = 0;
+            int maxCounter = ExecBlocks.Count;
             foreach (ExecBlock execBlock in ExecBlocks)
             {
+                Console.WriteLine($"{counter++}/{maxCounter}");
                 for (int i = 0; i < execBlock.Body.Count; ++i)
                 {
                     AssemblyElement element = execBlock.Body[i];
