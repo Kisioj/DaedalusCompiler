@@ -267,7 +267,9 @@ namespace DaedalusCompiler.Compilation
         private readonly bool _isInsideIfCondition;
         private readonly bool _isInsideReturnStatement;
         private readonly List<DatSymbolType> _parametersTypes;
+        private readonly Stack<List<DatSymbolType>> _parametersTypesStack;
         private readonly int _argIndex;
+        private readonly Stack<int> _argIndexStack;
         
         public LazyComplexReferenceNodeInstructions(
             AssemblyBuilder assemblyBuilder,
@@ -286,7 +288,9 @@ namespace DaedalusCompiler.Compilation
             _isInsideIfCondition = assemblyBuilder.IsInsideIfCondition;
             _isInsideReturnStatement = assemblyBuilder.IsInsideReturnStatement;
             _parametersTypes = assemblyBuilder.ParametersTypes;
+            _parametersTypesStack = assemblyBuilder.ParametersTypesStack;
             _argIndex = assemblyBuilder.ArgIndex;
+            _argIndexStack = assemblyBuilder.ArgIndexStack;
         }
         
         public List<AssemblyInstruction> Evaluate()
@@ -299,7 +303,9 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideIfCondition = _isInsideIfCondition;
             _assemblyBuilder.IsInsideReturnStatement = _isInsideReturnStatement;
             _assemblyBuilder.ParametersTypes = _parametersTypes;
+            _assemblyBuilder.ParametersTypesStack = _parametersTypesStack;
             _assemblyBuilder.ArgIndex = _argIndex;
+            _assemblyBuilder.ArgIndexStack = _argIndexStack;
             
             return _parserListener.GetComplexReferenceNodeInstructions(_complexReferenceNodes);
         }
@@ -347,9 +353,9 @@ namespace DaedalusCompiler.Compilation
         public bool IsInsideIfCondition;
         public bool IsInsideReturnStatement;
         public List<DatSymbolType> ParametersTypes;
-        public readonly Stack<List<DatSymbolType>> ParametersTypesStack;
+        public Stack<List<DatSymbolType>> ParametersTypesStack;
         public int ArgIndex;
-        public readonly Stack<int> ArgIndexStack;
+        public Stack<int> ArgIndexStack;
         private int _nextSymbolIndex;
 
         public AssemblyBuilder()
