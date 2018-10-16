@@ -484,6 +484,11 @@ namespace DaedalusCompiler.Compilation
 
             var symbolPart = complexReferenceNodes[0];
             string symbolName = symbolPart.referenceNode().GetText();
+
+            if (isInsideArgList && symbolName == "NOFUNC")
+            {
+                return new List<AssemblyInstruction> { new PushInt(-1) };
+            }
             
             DatSymbol symbol;
             if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
