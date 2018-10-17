@@ -35,7 +35,7 @@ namespace DaedalusCompiler.Compilation
                 var assignInstruction =
                     AssemblyBuilderHelpers.GetAssignInstructionForDatSymbolType(parameterSymbol.Type);
 
-                if (parameterSymbol.Type is DatSymbolType.Class)
+                if (parameterSymbol.Type is DatSymbolType.Instance)
                 {
                     _assemblyBuilder.AddInstruction(new PushInstance(parameterSymbol));
                 }
@@ -61,6 +61,7 @@ namespace DaedalusCompiler.Compilation
             DatSymbolType? parameterType = DatSymbolTypeFromString(parameterTypeName);
             if (parameterType is DatSymbolType.Class)
             {
+                parameterType = DatSymbolType.Instance;
                 var parentSymbol = _assemblyBuilder.ResolveSymbol(parameterTypeName);
                 parentId = parentSymbol.Index;
             }
@@ -473,6 +474,22 @@ namespace DaedalusCompiler.Compilation
         }
 
 
+
+        public AssemblyInstruction PushSymbol(DatSymbol symbol, DatSymbolType asType)
+        {
+            if (asType == DatSymbolType.Func || (asType == DatSymbolType.Int && symbol.Type != DatSymbolType.Int))
+            {
+                return new PushInt(symbol.Index);
+            }
+
+            if (asType == DatSymbolType.Instance)  /* DatSymbolType.Class isn't possible */
+            {
+                return new PushInstance(symbol);
+            }
+            return new PushVar(symbol);
+
+        }
+        
         public List<AssemblyInstruction> GetComplexReferenceNodeInstructions(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
         {
             
@@ -543,42 +560,18 @@ namespace DaedalusCompiler.Compilation
                 {
                     if (isInsideArgList)
                     {
-                        DatSymbolType parameterType = _assemblyBuilder.GetParameterType();
-                        
-                        if (symbol.Type == DatSymbolType.Func || parameterType == DatSymbolType.Func) // TODO check this
-                        {
-                            instructions.Add(new PushInt(symbol.Index));
-                        }
-                        else if (symbol.Type == DatSymbolType.Instance && parameterType == DatSymbolType.Int)
-                        {
-                            instructions.Add(new PushInt(symbol.Index));
-                        }
-                        else if ( (symbol.Type == DatSymbolType.Instance || symbol.Type == DatSymbolType.Class) && (parameterType == DatSymbolType.Class || parameterType == DatSymbolType.Instance))
-                        {
-                            instructions.Add(new PushInstance(symbol));
-                        }
-                        else
-                        {
-                            instructions.Add(new PushVar(symbol));
-                        }
+                        instructions.Add(PushSymbol(symbol, _assemblyBuilder.GetParameterType()));
                     }
                     else if (isInsideReturnStatement && activeBlock != null)
                     {
-                        if (symbol.Type == DatSymbolType.Instance && activeBlock.Symbol.ReturnType == DatSymbolType.Int)
-                        {
-                            instructions.Add(new PushInt(symbol.Index));
-                        }
-                        else
-                        {
-                            instructions.Add(new PushVar(symbol));
-                        }
+                        instructions.Add(PushSymbol(symbol, activeBlock.Symbol.ReturnType));
                     }
-                    /*
-                    PushInstance jest wtedy kiedy instancja jest po lewej stronie przypisania, np.
-                    person = ...
-                    oraz kiedy przekazywana jest jako argument do funkcji, gdy odpowiadający parametr to tez instancja, a w zasadzie klasa
-                    */
-                    else if ((isInsideIfCondition || isInsideAssignment) && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
+                    else if (isInsideAssignment)
+                    {
+                        instructions.Add(PushSymbol(symbol, _assemblyBuilder.AssignmentType));
+                    }
+                    
+                    else if (isInsideIfCondition && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
                     {
                         instructions.Add(new PushInt(symbol.Index));
                     }
@@ -761,8 +754,12 @@ namespace DaedalusCompiler.Compilation
             List<AssemblyInstruction> instructions = GetComplexReferenceNodeInstructions(complexReferenceNodes);
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
             _assemblyBuilder.IsInsideAssignment = true;
+
+
+            _assemblyBuilder.AssignmentType = GetComplexReferenceType(complexReferenceNodes);
             
-            if (GetComplexReferenceType(complexReferenceNodes) == DatSymbolType.Float)
+            
+            if (GetComplexReferenceType(complexReferenceNodes) == DatSymbolType.Float)  // TODO this will be unnecesary
             {
                 _assemblyBuilder.IsInsideFloatAssignment = true;
             }

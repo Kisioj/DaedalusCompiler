@@ -391,6 +391,279 @@ namespace DaedalusCompiler.Tests
             };
             AssertSymbolsMatch();
         }
+        
+        [Fact]
+        public void TestFullAssignment()
+        {
+            _code = @"
+                class C_NPC { var int data [200]; };
+
+                // var void varvoid;
+                var float varfloat;
+                var int varint;
+                var string varstring;
+                // var class varclass;
+                var C_NPC varclass;
+                var func varfunc;
+                // var prototype varprototype;
+                prototype varprototype(C_NPC) {};
+                // var instance varinstance;
+                instance varinstance(C_NPC) {};
+                instance varinstance2(varprototype) {};
+                
+                
+                func void retvoid() {};
+                func float retfloat() {};
+                func int retint() {};
+                func string retstring() {};
+                // func class retclass() {};
+                func C_NPC retC_NPC() {};
+                // func func retfunc() {};
+                // func prototype retprototype() {};
+                // func varprototype retvarprototype() {};
+                // func instance retinstance() {};
+                // func varinstance retvarinstance() {};
+                // func varinstance2 retvarinstance2() {};
+                
+                
+                func void testFunc() {
+                    var float locfloat;
+                    var int locint;
+                    var string locstring;
+                    var C_NPC locclass;
+                    var func locfunc;
+                    
+                    // locfloat = varfloat;
+                    // locfloat = varint;
+                    // locfloat = varstring;
+                    // locfloat = varclass;
+                    // locfloat = varfunc;
+                    // locfloat = varprototype;
+                    // locfloat = varinstance;
+                    // locfloat = varinstance2;
+                    // locfloat = retvoid;
+                    // locfloat = retfloat;
+                    // locfloat = retint;
+                    // locfloat = retstring;
+                    // locfloat = retC_NPC;
+                    // locfloat = retvoid();
+                    locfloat = retfloat();
+                    // locfloat = retint();
+                    // locfloat = retstring();
+                    // locfloat = retC_NPC();
+                    
+                    // locint = varfloat;
+                    locint = varint;
+                    // locint = varstring;
+                    locint = varclass;
+                    // locint = varfunc;
+                    locint = varprototype;
+                    locint = varinstance;
+                    locint = varinstance2;
+                    // locint = retvoid;
+                    // locint = retfloat;
+                    // locint = retint;
+                    // locint = retstring;
+                    // locint = retC_NPC;
+                    // locint = retvoid();
+                    // locint = retfloat();
+                    locint = retint();
+                    // locint = retstring();
+                    // locint = retC_NPC();
+                    
+                    // locstring = varfloat;
+                    // locstring = varint;
+                    locstring = varstring;
+                    // locstring = varclass;
+                    // locstring = varfunc;
+                    // locstring = varprototype;
+                    // locstring = varinstance;
+                    // locstring = varinstance2;
+                    // locstring = retvoid;
+                    // locstring = retfloat;
+                    // locstring = retint;
+                    // locstring = retstring;
+                    // locstring = retC_NPC;
+                    // locstring = retvoid();
+                    // locstring = retfloat();
+                    // locstring = retint();
+                    locstring = retstring();
+                    // locstring = retC_NPC();
+                    
+                    // locclass = varfloat;
+                    // locclass = varint;
+                    // locclass = varstring;
+                    // locclass = varclass;
+                    // locclass = varfunc;
+                    // locclass = varprototype;
+                    // locclass = varinstance;
+                    // locclass = varinstance2;
+                    // locclass = retvoid;
+                    // locclass = retfloat;
+                    // locclass = retint;
+                    // locclass = retstring;
+                    // locclass = retC_NPC;
+                    // locclass = retvoid();
+                    // locclass = retfloat();
+                    // locclass = retint();
+                    // locclass = retstring();
+                    locclass = retC_NPC();
+                    
+                    // locfunc = varfloat;
+                    // locfunc = varint;
+                    // locfunc = varstring;
+                    locfunc = varclass;
+                    locfunc = varfunc;
+                    locfunc = varprototype;
+                    locfunc = varinstance;
+                    locfunc = varinstance2;
+                    locfunc = retvoid;
+                    locfunc = retfloat;
+                    locfunc = retint;
+                    locfunc = retstring;
+                    locfunc = retC_NPC;
+                    // locfunc = retvoid();
+                    // locfunc = retfloat();
+                    // locfunc = retint();
+                    // locfunc = retstring();
+                    // locfunc = retC_NPC();
+                };
+            ";
+
+            _instructions = GetExecBlockInstructions("testfunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // locfloat = retfloat();
+                new Call(Ref("retfloat")),
+                new PushVar(Ref("testfunc.locfloat")),
+                new AssignFloat(),
+                
+                // locint = varint;
+                new PushVar(Ref("varint")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+                
+                // locint = varclass;
+                new PushInt(RefIndex("varclass")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+                
+                // locint = varprototype;
+                new PushInt(RefIndex("varprototype")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+                
+                // locint = varinstance;
+                new PushInt(RefIndex("varinstance")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+                
+                // locint = varinstance2;
+                new PushInt(RefIndex("varinstance2")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+                
+                // locint = retint();
+                new Call(Ref("retint")),
+                new PushVar(Ref("testfunc.locint")),
+                new Assign(),
+
+                // locstring = varstring;
+                new PushVar(Ref("varstring")),
+                new PushVar(Ref("testfunc.locstring")),
+                new AssignString(),
+                
+                // locstring = retstring();
+                new Call(Ref("retstring")),
+                new PushVar(Ref("testfunc.locstring")),
+                new AssignString(),
+                
+                // locclass = retC_NPC();
+                new Call(Ref("retC_NPC")),
+                new PushInstance(Ref("testfunc.locclass")),
+                new AssignInstance(),
+
+                // locfunc = varclass;
+                new PushInt(RefIndex("varclass")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = varfunc;
+                new PushInt(RefIndex("varfunc")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = varprototype;
+                new PushInt(RefIndex("varprototype")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = varinstance;
+                new PushInt(RefIndex("varinstance")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = varinstance2;
+                new PushInt(RefIndex("varinstance2")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = retvoid;
+                new PushInt(RefIndex("retvoid")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = retfloat;
+                new PushInt(RefIndex("retfloat")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = retint;
+                new PushInt(RefIndex("retint")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = retstring;
+                new PushInt(RefIndex("retstring")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+                
+                // locfunc = retC_NPC;
+                new PushInt(RefIndex("retC_NPC")),
+                new PushVar(Ref("testfunc.locfunc")),
+                new AssignFunc(),
+
+
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("varfloat"),
+                Ref("varint"),
+                Ref("varstring"),
+                Ref("varclass"),
+                Ref("varfunc"),
+                Ref("varprototype"),
+                Ref("varinstance"),
+                Ref("varinstance2"),
+                Ref("retvoid"),
+                Ref("retfloat"),
+                Ref("retint"),
+                Ref("retstring"),
+                Ref("retC_NPC"),
+                Ref("testfunc"),
+                Ref("testfunc.locfloat"),
+                Ref("testfunc.locint"),
+                Ref("testfunc.locstring"),
+                Ref("testfunc.locclass"),
+                Ref("testfunc.locfunc"),
+            };
+            AssertSymbolsMatch();
+        }
 
         [Fact]
         public void TestIntAddAndMultOperatorPrecedence()
@@ -2440,6 +2713,322 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc.f"),
                 Ref("testFunc.g"),
                 Ref("testFunc.h"),
+            };
+            AssertSymbolsMatch();
+        }
+        
+        [Fact]
+        public void TestMoreFuncCalls()
+        {
+            _externalCode = @"
+                var instance instance_help;
+                func int WLD_DetectPlayer(var instance par0) {};
+            ";
+            _code = @"
+                class C_NPC { var int data [200]; };
+
+                // var void varvoid;
+                var float varfloat;
+                var int varint;
+                var string varstring;
+                // var class varclass;
+                var C_NPC varclass;
+                var func varfunc;
+                // var prototype varprototype;
+                prototype varprototype(C_NPC) {};
+                // var instance varinstance;
+                instance varinstance(C_NPC) {};
+                instance varinstance2(varprototype) {};
+                
+                
+                // func void parvoid(var void par) {};
+                func void parfloat(var float par) {};
+                func void parint(var int par) {};
+                func void parstring(var string par) {};
+                // func void parclass(var class par) {};
+                func void parC_NPC(var C_NPC par) {};
+                func void parfunc(var func par) {};
+                // func void parprototype(var prototype par) {};
+                // func void parprototype2(var varprototype par) {};
+                // func void parinstance(var instance par) {};
+                // func void parinstance2(var varinstance par) {};
+                // func void parinstance3(var varinstance2 par) {};
+                
+                
+                func void testFunc() {
+                    parfloat(varfloat);
+                    // parfloat(varint);
+                    // parfloat(varstring);
+                    // parfloat(varclass);
+                    // parfloat(varfunc);
+                    // parfloat(varprototype);
+                    // parfloat(varinstance);
+                    // parfloat(varinstance2);
+                    // parfloat(parfloat);
+                    // parfloat(NULL);
+                    // parfloat(NOFUNC);
+                    
+                    // parint(varfloat);
+                    parint(varint);
+                    // parint(varstring);
+                    parint(varclass);
+                    // parint(varfunc);
+                    parint(varprototype);
+                    parint(varinstance);
+                    parint(varinstance2);
+                    // parint(parint);
+                    // parint(NULL);
+                    // parint(NOFUNC);
+                    
+                    // parstring(varfloat);
+                    // parstring(varint);
+                    parstring(varstring);
+                    // parstring(varclass);
+                    // parstring(varfunc);
+                    // parstring(varprototype);
+                    // parstring(varinstance);
+                    // parstring(varinstance2);
+                    // parstring(parstring);
+                    // parstring(NULL);
+                    // parstring(NOFUNC);
+                
+                    // parC_NPC(varfloat);
+                    // parC_NPC(varint);
+                    // parC_NPC(varstring);
+                    parC_NPC(varclass);
+                    // parC_NPC(varfunc);
+                    // parC_NPC(varprototype);
+                    parC_NPC(varinstance);
+                    parC_NPC(varinstance2);
+                    // parC_NPC(parC_NPC);
+                    parC_NPC(NULL);
+                    // parC_NPC(NOFUNC);
+                    
+                    // parfunc(varfloat);
+                    // parfunc(varint);
+                    // parfunc(varstring);
+                    parfunc(varclass);
+                    parfunc(varfunc);
+                    parfunc(varprototype);
+                    parfunc(varinstance);
+                    parfunc(varinstance2);
+                    parfunc(parfunc);
+                    // parfunc(NULL);
+                    parfunc(NOFUNC);
+                    
+                    
+                    // WLD_DetectPlayer(varfloat);
+                    // WLD_DetectPlayer(varint);
+                    // WLD_DetectPlayer(varstring);
+                    WLD_DetectPlayer(varclass);
+                    // WLD_DetectPlayer(varfunc);
+                    // WLD_DetectPlayer(varprototype);
+                    WLD_DetectPlayer(varinstance);
+                    WLD_DetectPlayer(varinstance2);
+                    // WLD_DetectPlayer(parfunc);
+                    // WLD_DetectPlayer(WLD_DetectPlayer);
+                    WLD_DetectPlayer(NULL);
+                    //WLD_DetectPlayer(NOFUNC);
+                };
+            ";
+            
+            _instructions = GetExecBlockInstructions("varprototype");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("varinstance");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("varinstance2");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new Call(Ref("varprototype")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+           
+            _instructions = GetExecBlockInstructions("parfloat");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("parfloat.par")),
+                new AssignFloat(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("parint");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("parint.par")),
+                new Assign(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("parstring");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("parstring.par")),
+                new AssignString(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("parC_NPC");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushInstance(Ref("parC_NPC.par")),
+                new AssignInstance(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("parfunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                new PushVar(Ref("parfunc.par")),
+                new AssignFunc(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            char prefix = (char)255;
+            
+            _instructions = GetExecBlockInstructions("testfunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parfloat(varfloat);
+                new PushVar(Ref("varfloat")),
+                new Call(Ref("parfloat")),
+
+                // parint(varint);
+                new PushVar(Ref("varint")),
+                new Call(Ref("parint")),
+                
+                // parint(varclass);
+                new PushInt(RefIndex("varclass")),
+                new Call(Ref("parint")),
+                
+                // parint(varprototype);
+                new PushInt(RefIndex("varprototype")),
+                new Call(Ref("parint")),
+                
+                // parint(varinstance);
+                new PushInt(RefIndex("varinstance")),
+                new Call(Ref("parint")),
+                
+                // parint(varinstance2);
+                new PushInt(RefIndex("varinstance2")),
+                new Call(Ref("parint")),
+
+                // parstring(varstring);
+                new PushVar(Ref("varstring")),
+                new Call(Ref("parstring")),
+
+                // parC_NPC(varclass);
+                new PushInstance(Ref("varclass")),
+                new Call(Ref("parC_NPC")),
+                
+                // parC_NPC(varinstance);
+                new PushInstance(Ref("varinstance")),
+                new Call(Ref("parC_NPC")),
+                
+                // parC_NPC(varinstance2);
+                new PushInstance(Ref("varinstance2")),
+                new Call(Ref("parC_NPC")),
+                
+                // parC_NPC(NULL);
+                new PushInstance(Ref($"{prefix}instance_help")),
+                new Call(Ref("parC_NPC")),
+
+                // parfunc(varclass);
+                new PushInt(RefIndex("varclass")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(varfunc);
+                new PushInt(RefIndex("varfunc")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(varprototype);
+                new PushInt(RefIndex("varprototype")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(varinstance);
+                new PushInt(RefIndex("varinstance")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(varinstance2);
+                new PushInt(RefIndex("varinstance2")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(parfunc);
+                new PushInt(RefIndex("parfunc")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(NOFUNC);
+                new PushInt(-1),
+                new Call(Ref("parfunc")),
+                
+                // WLD_DetectPlayer(varclass);
+                new PushInstance(Ref("varclass")),
+                new CallExternal(Ref("WLD_DetectPlayer")),
+                
+                // WLD_DetectPlayer(varinstance);
+                new PushInstance(Ref("varinstance")),
+                new CallExternal(Ref("WLD_DetectPlayer")),
+                
+                // WLD_DetectPlayer(varinstance2);
+                new PushInstance(Ref("varinstance2")),
+                new CallExternal(Ref("WLD_DetectPlayer")),
+                
+                // WLD_DetectPlayer(NULL);
+                new PushInstance(Ref($"{prefix}instance_help")),
+                new CallExternal(Ref("WLD_DetectPlayer")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref($"{prefix}instance_help"),
+                Ref("WLD_DetectPlayer"),
+                Ref("WLD_DetectPlayer.par0"),
+                Ref("C_NPC"),
+                Ref("C_NPC.data"),
+                Ref("varfloat"),
+                Ref("varint"),
+                Ref("varstring"),
+                Ref("varclass"),
+                Ref("varfunc"),
+                Ref("varprototype"),
+                Ref("varinstance"),
+                Ref("varinstance2"),
+                Ref("parfloat"),
+                Ref("parfloat.par"),
+                Ref("parint"),
+                Ref("parint.par"),
+                Ref("parstring"),
+                Ref("parstring.par"),
+                Ref("parC_NPC"),
+                Ref("parC_NPC.par"),
+                Ref("parfunc"),
+                Ref("parfunc.par"),
+                Ref("testfunc"),
+
             };
             AssertSymbolsMatch();
         }

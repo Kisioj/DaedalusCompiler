@@ -266,6 +266,7 @@ namespace DaedalusCompiler.Compilation
         private readonly bool _isInsideFloatAssignment;
         private readonly bool _isInsideIfCondition;
         private readonly bool _isInsideReturnStatement;
+        private readonly DatSymbolType _assignmentType;
         private readonly List<DatSymbolType> _parametersTypes;
         private readonly Stack<List<DatSymbolType>> _parametersTypesStack;
         private readonly int _argIndex;
@@ -287,6 +288,7 @@ namespace DaedalusCompiler.Compilation
             _isInsideFloatAssignment = assemblyBuilder.IsInsideFloatAssignment;
             _isInsideIfCondition = assemblyBuilder.IsInsideIfCondition;
             _isInsideReturnStatement = assemblyBuilder.IsInsideReturnStatement;
+            _assignmentType = assemblyBuilder.AssignmentType;
             _parametersTypes = assemblyBuilder.ParametersTypes;
             _parametersTypesStack = assemblyBuilder.ParametersTypesStack;
             _argIndex = assemblyBuilder.ArgIndex;
@@ -302,6 +304,7 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideFloatAssignment = _isInsideFloatAssignment;
             _assemblyBuilder.IsInsideIfCondition = _isInsideIfCondition;
             _assemblyBuilder.IsInsideReturnStatement = _isInsideReturnStatement;
+            _assemblyBuilder.AssignmentType = _assignmentType;
             _assemblyBuilder.ParametersTypes = _parametersTypes;
             _assemblyBuilder.ParametersTypesStack = _parametersTypesStack;
             _assemblyBuilder.ArgIndex = _argIndex;
@@ -352,6 +355,7 @@ namespace DaedalusCompiler.Compilation
         public bool IsInsideFloatAssignment;
         public bool IsInsideIfCondition;
         public bool IsInsideReturnStatement;
+        public DatSymbolType AssignmentType;
         public List<DatSymbolType> ParametersTypes;
         public Stack<List<DatSymbolType>> ParametersTypesStack;
         public int ArgIndex;
@@ -377,6 +381,7 @@ namespace DaedalusCompiler.Compilation
             IsInsideAssignment = false;
             IsInsideFloatAssignment = false;
             IsInsideReturnStatement = false;
+            AssignmentType = DatSymbolType.Void;
             // ParametersTypes = new List<DatSymbolType>();
             ParametersTypesStack = new Stack<List<DatSymbolType>>();
             // ArgIndex = -1;
