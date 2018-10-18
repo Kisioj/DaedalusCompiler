@@ -551,7 +551,7 @@ namespace DaedalusCompiler.Compilation
         }
         
 
-        public bool IsKeyword(string symbolName)
+        public bool IsArgListKeyword(string symbolName)
         {
             return symbolName == "nofunc" || symbolName == "null";
         }
@@ -578,36 +578,21 @@ namespace DaedalusCompiler.Compilation
             ExecBlock activeBlock = _assemblyBuilder.ActiveExecBlock;
             bool isInsideArgList = _assemblyBuilder.IsInsideArgList;
             bool isInsideAssignment = _assemblyBuilder.IsInsideAssignment;
-            bool isInsideIfCondition = _assemblyBuilder.IsInsideIfCondition;
-            bool isInsideReturnStatement = _assemblyBuilder.IsInsideReturnStatement;
 
             var symbolPart = complexReferenceNodes[0];
             string symbolName = symbolPart.referenceNode().GetText().ToLower();
 
 
-            if (isInsideArgList && IsKeyword(symbolName))
+            if (isInsideArgList && IsArgListKeyword(symbolName))
             {
                 return GetKeywordInstructions(symbolName);
             }
 
-
-            DatSymbol symbol;
-            if (activeBlock != null &&
-                (activeBlock.Symbol.Type == DatSymbolType.Instance ||
-                 activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
-            {
-                symbol = activeBlock.Symbol;
-            }
-            else
-            {
-                symbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]);
-            }
-
+            DatSymbol symbol = GetComplexReferenceNodeSymbol(complexReferenceNodes[0]);
+            List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
+            
             if (complexReferenceNodes.Length == 1)
             {
-
-                List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-
                 int arrIndex = GetArrayIndex(symbolPart);
                 instructions.Add(GetProperPushInstruction(symbol, arrIndex));
                 return instructions;
@@ -615,20 +600,19 @@ namespace DaedalusCompiler.Compilation
 
             if (complexReferenceNodes.Length == 2)
             {
-
                 var attributePart = complexReferenceNodes[1];
                 string attributeName = attributePart.referenceNode().GetText();
                 DatSymbol attribute = _assemblyBuilder.ResolveAttribute(symbol, attributeName);
 
-                List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-
-            
-                if (activeBlock != null && symbol != activeBlock.Symbol && !(isInsideAssignment && _assemblyBuilder.AssignmentType == DatSymbolType.Func)
-                    && !(isInsideArgList && (_assemblyBuilder.GetParameterType() == DatSymbolType.Instance || _assemblyBuilder.GetParameterType() == DatSymbolType.Func)) )
+                if (
+                    activeBlock != null
+                    && symbol != activeBlock.Symbol
+                    && !(isInsideAssignment && _assemblyBuilder.AssignmentType == DatSymbolType.Func)
+                    && !(isInsideArgList && (_assemblyBuilder.GetParameterType() == DatSymbolType.Instance || _assemblyBuilder.GetParameterType() == DatSymbolType.Func))
+                    )
                 {
                     instructions.Add(new SetInstance(symbol));
                 }
-
                 int arrIndex = GetArrayIndex(attributePart);
                 instructions.Add(GetProperPushInstruction(attribute, arrIndex));
                 return instructions;
@@ -658,9 +642,21 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
-        private DatSymbol GetComplexReferenceNodeSymbol(DaedalusParser.ComplexReferenceNodeContext complexReferenceNode)
+        private DatSymbol GetComplexReferenceNodeSymbol(DaedalusParser.ComplexReferenceNodeContext context)
         {
-            return _assemblyBuilder.ResolveSymbol(complexReferenceNode.referenceNode().GetText());
+            string symbolNameLower = context.referenceNode().GetText().ToLower();
+            ExecBlock activeBlock = _assemblyBuilder.ActiveExecBlock;
+
+            if (
+                activeBlock != null
+                && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype)
+                && (symbolNameLower == "slf" || symbolNameLower == "self")
+                )
+            {
+                return activeBlock.Symbol;
+            }
+            
+            return _assemblyBuilder.ResolveSymbol(context.referenceNode().GetText());
         }
 
         
