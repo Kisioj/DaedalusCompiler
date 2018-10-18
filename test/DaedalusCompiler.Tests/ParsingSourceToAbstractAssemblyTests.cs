@@ -670,55 +670,55 @@ namespace DaedalusCompiler.Tests
         {
             _code = @"
                 class C_NPC {
+                    var float varfloat;
+                    var int varint;
+                    var string varstring;
+                    var C_NPC varclass;
+                    var func varfunc;
+                };
+                
                 var float varfloat;
                 var int varint;
                 var string varstring;
                 var C_NPC varclass;
                 var func varfunc;
-            };
-            
-            var float varfloat;
-            var int varint;
-            var string varstring;
-            var C_NPC varclass;
-            var func varfunc;
-            prototype varprototype(C_NPC) {};
-            instance varinstance(C_NPC) {};
-            instance varinstance2(varprototype) {};
-            
-            func void retvoid() {};
-            func float retfloat() {};
-            func int retint() {};
-            func string retstring() {};
-            func C_NPC retC_NPC() {};
-            
-            
-            func void testFunc() {
-                varinstance.varfloat = retfloat();
+                prototype varprototype(C_NPC) {};
+                instance varinstance(C_NPC) {};
+                instance varinstance2(varprototype) {};
                 
-                varinstance.varint = varinstance2.varint;
-                varinstance.varint = varinstance2.varclass;
-                varinstance.varint = varprototype;
-                varinstance.varint = varinstance;
-                varinstance.varint = varinstance2;
-                varinstance.varint = retint();
-            
-                varinstance.varstring = varinstance2.varstring;
-                varinstance.varstring = retstring();
-            
-                varinstance.varclass = retC_NPC();
-            
-                varinstance.varfunc = varinstance2.varclass;
-                varinstance.varfunc = varinstance2.varfunc;
-                varinstance.varfunc = varprototype;
-                varinstance.varfunc = varinstance;
-                varinstance.varfunc = varinstance2;
-                varinstance.varfunc = retvoid;
-                varinstance.varfunc = retfloat;
-                varinstance.varfunc = retint;
-                varinstance.varfunc = retstring;
-                varinstance.varfunc = retC_NPC;
-            };
+                func void retvoid() {};
+                func float retfloat() {};
+                func int retint() {};
+                func string retstring() {};
+                func C_NPC retC_NPC() {};
+                
+                
+                func void testFunc() {
+                    varinstance.varfloat = retfloat();
+                    
+                    varinstance.varint = varinstance2.varint;
+                    varinstance.varint = varinstance2.varclass;
+                    varinstance.varint = varprototype;
+                    varinstance.varint = varinstance;
+                    varinstance.varint = varinstance2;
+                    varinstance.varint = retint();
+                
+                    varinstance.varstring = varinstance2.varstring;
+                    varinstance.varstring = retstring();
+                
+                    // varinstance.varclass = retC_NPC();
+                
+                    varinstance.varfunc = varinstance2.varclass;
+                    varinstance.varfunc = varinstance2.varfunc;
+                    varinstance.varfunc = varprototype;
+                    varinstance.varfunc = varinstance;
+                    varinstance.varfunc = varinstance2;
+                    varinstance.varfunc = retvoid;
+                    varinstance.varfunc = retfloat;
+                    varinstance.varfunc = retint;
+                    varinstance.varfunc = retstring;
+                    varinstance.varfunc = retC_NPC;
+                };
             ";
 
             _instructions = GetExecBlockInstructions("testFunc");
@@ -751,13 +751,13 @@ namespace DaedalusCompiler.Tests
                 new Assign(),
                 
                 // varinstance.varint = varinstance;
-                new PushInt(RefIndex("varprototype")),
+                new PushInt(RefIndex("varinstance")),
                 new SetInstance(Ref("varinstance")),
                 new PushVar(Ref("C_NPC.varint")),
                 new Assign(),
                 
                 // varinstance.varint = varinstance2;
-                new PushInt(RefIndex("varprototype")),
+                new PushInt(RefIndex("varinstance2")),
                 new SetInstance(Ref("varinstance2")),
                 new PushVar(Ref("C_NPC.varint")),
                 new Assign(),
@@ -770,7 +770,7 @@ namespace DaedalusCompiler.Tests
             
                 // varinstance.varstring = varinstance2.varstring;
                 new SetInstance(Ref("varinstance2")),
-                new PushInt(RefIndex("C_NPC.varstring")),
+                new PushVar(Ref("C_NPC.varstring")),
                 new SetInstance(Ref("varinstance")),
                 new PushVar(Ref("C_NPC.varstring")),
                 new AssignString(),
@@ -782,12 +782,12 @@ namespace DaedalusCompiler.Tests
                 new AssignString(),
             
                 // varinstance.varclass = retC_NPC();
-                new Call(Ref("retC_NPC")),
-                new PushInstance(Ref("C_NPC.varclass")),
-                new AssignInstance(),
+                // new Call(Ref("retC_NPC")),
+                // new PushInstance(Ref("C_NPC.varclass")), //  should be SetInstance && PushVar instead, probably Gothic's compiler bug
+                // new AssignInstance(),
                 
                 // varinstance.varfunc = varinstance2.varclass;
-                new PushInt(RefIndex("C_NPC.varclass")),
+                new PushInt(RefIndex("C_NPC.varclass")), // SetInstance before?
                 new SetInstance(Ref("varinstance")),
                 new PushVar(Ref("C_NPC.varfunc")),
                 new AssignFunc(),
@@ -2719,12 +2719,14 @@ namespace DaedalusCompiler.Tests
                 new AssemblyLabel("label_5"),
                         
                 // if(varinstance.varint)
+                new SetInstance(Ref("varinstance")),
                 new PushVar(Ref("C_NPC.varint")),
                 new JumpIfToLabel("label_6"),
                 // endif
                 new AssemblyLabel("label_6"),
                 
                 // if(varinstance.varclass)
+                new SetInstance(Ref("varinstance")),
                 new PushInt(RefIndex("C_NPC.varclass")),
                 new JumpIfToLabel("label_7"),
                 // endif
@@ -3427,19 +3429,19 @@ namespace DaedalusCompiler.Tests
                 new Call(Ref("parstring")),
                 
                 // parC_NPC(varinstance.varclass);
-                new PushInstance(Ref("C_NPC.varclass")),
+                new PushInstance(Ref("C_NPC.varclass")), // SetInstance before
                 new Call(Ref("parC_NPC")),
                 
                 // parfunc(varinstance.varclass);
-                new PushInt(RefIndex("C_NPC.varclass")),
+                new PushInt(RefIndex("C_NPC.varclass")), // SetInstance before
                 new Call(Ref("parfunc")),
                 
                 // parfunc(varinstance.varfunc);
-                new PushInt(RefIndex("C_NPC.varfunc")),
+                new PushInt(RefIndex("C_NPC.varfunc")), // SetInstance before
                 new Call(Ref("parfunc")),
                 
                 // WLD_DetectPlayer(varinstance.varclass);
-                new PushInstance(Ref("C_NPC.varclass")),
+                new PushInstance(Ref("C_NPC.varclass")), // SetInstance before
                 new CallExternal(Ref("WLD_DetectPlayer")),
                 
                 new Ret(),
