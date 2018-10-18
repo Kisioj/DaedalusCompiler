@@ -263,7 +263,6 @@ namespace DaedalusCompiler.Compilation
         
         private readonly bool _isInsideArgList;
         private readonly bool _isInsideAssignment;
-        private readonly bool _isInsideFloatAssignment;
         private readonly bool _isInsideIfCondition;
         private readonly bool _isInsideReturnStatement;
         private readonly DatSymbolType _assignmentType;
@@ -285,7 +284,6 @@ namespace DaedalusCompiler.Compilation
            
             _isInsideArgList = assemblyBuilder.IsInsideArgList;
             _isInsideAssignment = assemblyBuilder.IsInsideAssignment;
-            _isInsideFloatAssignment = assemblyBuilder.IsInsideFloatAssignment;
             _isInsideIfCondition = assemblyBuilder.IsInsideIfCondition;
             _isInsideReturnStatement = assemblyBuilder.IsInsideReturnStatement;
             _assignmentType = assemblyBuilder.AssignmentType;
@@ -301,7 +299,6 @@ namespace DaedalusCompiler.Compilation
             
             _assemblyBuilder.IsInsideArgList = _isInsideArgList;
             _assemblyBuilder.IsInsideAssignment = _isInsideAssignment;
-            _assemblyBuilder.IsInsideFloatAssignment = _isInsideFloatAssignment;
             _assemblyBuilder.IsInsideIfCondition = _isInsideIfCondition;
             _assemblyBuilder.IsInsideReturnStatement = _isInsideReturnStatement;
             _assemblyBuilder.AssignmentType = _assignmentType;
@@ -352,7 +349,6 @@ namespace DaedalusCompiler.Compilation
 
         public bool IsInsideArgList;
         public bool IsInsideAssignment;
-        public bool IsInsideFloatAssignment;
         public bool IsInsideIfCondition;
         public bool IsInsideReturnStatement;
         public DatSymbolType AssignmentType;
@@ -379,7 +375,6 @@ namespace DaedalusCompiler.Compilation
             
             IsInsideArgList = false;
             IsInsideAssignment = false;
-            IsInsideFloatAssignment = false;
             IsInsideReturnStatement = false;
             AssignmentType = DatSymbolType.Void;
             // ParametersTypes = new List<DatSymbolType>();
@@ -391,20 +386,7 @@ namespace DaedalusCompiler.Compilation
 
         public DatSymbolType GetParameterType()
         {
-            try
-            {
-                return ParametersTypes[ArgIndex];
-            }
-            catch (System.ArgumentOutOfRangeException)
-            {
-                Console.WriteLine("return ParametersTypes[ArgIndex];");
-                return ParametersTypes[ArgIndex];
-            }
-            catch (System.NullReferenceException)
-            {
-                Console.WriteLine("return ParametersTypes[ArgIndex];");
-                return ParametersTypes[ArgIndex];
-            }
+            return ParametersTypes[ArgIndex];
         }
         
         public string NewStringSymbolName()
@@ -530,7 +512,6 @@ namespace DaedalusCompiler.Compilation
             ArgIndex = -1;
             ParametersTypes = new List<DatSymbolType>();
             IsInsideArgList = true;
-            
         }
 
         public void FuncCallEnd(AssemblyElement instruction)
@@ -719,8 +700,6 @@ namespace DaedalusCompiler.Compilation
             
             while (symbol != null)
             {
-                // attributeSymbol = Symbols.Find(x => x.Name.ToUpper() == attributePath.ToUpper());
-                // attributeSymbol = SymbolsDict[attributePath.ToUpper()];
                 attributeSymbol = SymbolsDict.GetValueOrDefault(attributePath.ToUpper(), null);
                 
                 if (attributeSymbol == null)
@@ -766,9 +745,6 @@ namespace DaedalusCompiler.Compilation
                 while (currentExecBlockSymbol != null)
                 {
                     var targetSymbolName = $"{currentExecBlockSymbol.Name}.{symbolName}";
-
-                    // symbol = Symbols.Find(x => x.Name.ToUpper() == targetSymbolName.ToUpper());
-                    // symbol = SymbolsDict[targetSymbolName.ToUpper()];
                     symbol = SymbolsDict.GetValueOrDefault(targetSymbolName.ToUpper(), null);
                     
                     
@@ -788,8 +764,6 @@ namespace DaedalusCompiler.Compilation
                 }
             }
 
-            // symbol = Symbols.Find(x => x.Name.ToUpper() == symbolName.ToUpper());
-            // symbol = SymbolsDict[symbolName.ToUpper()];
             symbol = SymbolsDict.GetValueOrDefault(symbolName.ToUpper(), null);
             
             if (symbol == null)
@@ -906,21 +880,7 @@ namespace DaedalusCompiler.Compilation
                         execBlock.Body.InsertRange(i, instructions);
                     }
                 }
-                
-                /*
-                
-                if (execBlock.Symbol.Flags.HasFlag(DatSymbolFlag.External))
-                {
-                    continue;
-                }
-                execBlock.Symbol.FirstTokenAddress = _currentAddress;
-                tokens.AddRange(GetTokens(execBlock));
-                */
             }
-                
-            /*
-             resolve references
-             */
         }
     }
 }

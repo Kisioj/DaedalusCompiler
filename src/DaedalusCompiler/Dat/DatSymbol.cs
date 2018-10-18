@@ -32,12 +32,10 @@ namespace DaedalusCompiler.Dat
     [DebuggerDisplay("{Type} {ReturnType} {Name} '{Flags}'")]
     public class DatSymbol
     {
-       
         /// <summary>
         /// Symbol's index, id. It shows how many symbols were loaded before this one.
         /// </summary>
         public int Index { get; set; }
-
         
         /// <summary>
         /// Symbol name like C_MISSION.RUNNING, C_ITEM, MAX_WISPSKILL
@@ -156,13 +154,11 @@ namespace DaedalusCompiler.Dat
             {
                 bitField |= ArrayLength;
             }
-            
             bitField |= ((uint)Type << 12);
             bitField |= ((uint)Flags << 16);
             bitField |= 0x400000;
             writer.Write(bitField);
 
-            
             writer.Write(Location.FileNumber);
             writer.Write(Location.Line);
             writer.Write(Location.LinesCount);
@@ -201,11 +197,7 @@ namespace DaedalusCompiler.Dat
                         }
                         break;
                 }
-            }
-            
-            
-            
-                    
+            }     
 
             // Save parent
             writer.Write(ParentIndex);
@@ -256,7 +248,6 @@ namespace DaedalusCompiler.Dat
                 Position = reader.ReadInt32(),
                 PositionsCount = reader.ReadInt32(),
             };
-
 
             switch (symbol.Type)
             {

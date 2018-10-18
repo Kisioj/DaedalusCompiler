@@ -1,6 +1,5 @@
 ﻿using Antlr4.Runtime;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime.Tree;
@@ -12,15 +11,7 @@ namespace DaedalusCompiler.Compilation
         public void CompileFromSrc(string srcFilePath, bool compileToAssembly)
         {
             try
-            {
-                /*
-                List<string> pathsList = SrcFileHelper.LoadScriptsFilePaths(srcFilePath).ToList();
-                string runtimePath = Path.Combine("DaedalusBuiltins", Path.GetFileNameWithoutExtension(srcFilePath).ToLower() + ".d");
-                pathsList.Insert(0, runtimePath);
-                string[] paths = pathsList.ToArray();
-                */
-
-                
+            {              
                 var assemblyBuilder = new AssemblyBuilder();
                 string[] paths = SrcFileHelper.LoadScriptsFilePaths(srcFilePath).ToArray();
                 
