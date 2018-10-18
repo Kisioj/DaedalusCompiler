@@ -475,19 +475,63 @@ namespace DaedalusCompiler.Compilation
 
 
 
-        public AssemblyInstruction PushSymbol(DatSymbol symbol, DatSymbolType asType)
+        public AssemblyInstruction PushSymbol(DatSymbol symbol, DatSymbolType? asType=null)
         {
             if (asType == DatSymbolType.Func || (asType == DatSymbolType.Int && symbol.Type != DatSymbolType.Int))
             {
                 return new PushInt(symbol.Index);
             }
 
-            if (asType == DatSymbolType.Instance)  /* DatSymbolType.Class isn't possible */
+            if (symbol.Type == DatSymbolType.Instance || asType == DatSymbolType.Instance)  /* DatSymbolType.Class isn't possible */
             {
                 return new PushInstance(symbol);
             }
             return new PushVar(symbol);
 
+        }
+
+        public int GetArrayIndex(DaedalusParser.ComplexReferenceNodeContext context)
+        {
+            var simpleValueContext = context.simpleValue();
+            
+            int arrIndex = 0;
+            if (simpleValueContext != null)
+            {
+                if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
+                {
+                    var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
+                    if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
+                    {
+                        throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
+                    }
+
+                    arrIndex = (int) constSymbol.Content[0];
+                }
+            }
+
+            return arrIndex;
+        }
+        
+
+        public bool IsKeyword(string symbolName)
+        {
+            return symbolName == "nofunc" || symbolName == "null";
+        }
+
+        public List<AssemblyInstruction> GetKeywordInstructions(string symbolName)
+        {
+            if (symbolName == "nofunc")
+            {
+                return new List<AssemblyInstruction> { new PushInt(-1) };
+            }
+
+            if (symbolName == "null")
+            {
+                DatSymbol symbol = _assemblyBuilder.ResolveSymbol($"{(char)255}instance_help");
+                return new List<AssemblyInstruction> { new PushInstance(symbol) };
+            }
+            
+            return new List<AssemblyInstruction>();
         }
         
         public List<AssemblyInstruction> GetComplexReferenceNodeInstructions(DaedalusParser.ComplexReferenceNodeContext[] complexReferenceNodes)
@@ -500,29 +544,16 @@ namespace DaedalusCompiler.Compilation
             bool isInsideReturnStatement = _assemblyBuilder.IsInsideReturnStatement;
 
             var symbolPart = complexReferenceNodes[0];
-            string symbolName = symbolPart.referenceNode().GetText();
+            string symbolName = symbolPart.referenceNode().GetText().ToLower();
 
             
-            DatSymbol symbol;
-            
-            if (isInsideArgList)
+            if (isInsideArgList && IsKeyword(symbolName))
             {
-                if (symbolName.ToLower() == "nofunc")
-                {
-                    return new List<AssemblyInstruction> { new PushInt(-1) };
-                }
-
-                if (symbolName.ToLower() == "null")
-                {
-                    symbol = _assemblyBuilder.ResolveSymbol($"{(char)255}instance_help");
-                    return new List<AssemblyInstruction>
-                    {
-                        new PushInstance(symbol),
-                    };
-                }
+                return GetKeywordInstructions(symbolName);
             }
             
-           
+            
+            DatSymbol symbol;
             if (activeBlock != null && (activeBlock.Symbol.Type == DatSymbolType.Instance || activeBlock.Symbol.Type == DatSymbolType.Prototype) && (symbolName == "slf" || symbolName == "self"))
             {
                 symbol = activeBlock.Symbol;
@@ -534,62 +565,37 @@ namespace DaedalusCompiler.Compilation
 
             if (complexReferenceNodes.Length == 1)
             {
-                var simpleValueContext = symbolPart.simpleValue();
-                int arrIndex = 0;
-                if (simpleValueContext != null)
-                {
-                    if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
-                    {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
-                        if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
-                        {
-                            throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
-                        }
-
-                        arrIndex = (int) constSymbol.Content[0];
-                    }
-                }
-
+                
                 List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
                 
+                int arrIndex = GetArrayIndex(symbolPart);
                 if (arrIndex > 0)
                 {
                     instructions.Add(new PushArrayVar(symbol, arrIndex));
                 }
+                else if (isInsideArgList)
+                {
+                    instructions.Add(PushSymbol(symbol, _assemblyBuilder.GetParameterType()));
+                }
+                else if (isInsideReturnStatement && activeBlock != null)
+                {
+                    instructions.Add(PushSymbol(symbol, activeBlock.Symbol.ReturnType));
+                }
+                else if (isInsideAssignment)
+                {
+                    instructions.Add(PushSymbol(symbol, _assemblyBuilder.AssignmentType));
+                }
+                else if (isInsideIfCondition)
+                {
+                    instructions.Add(PushSymbol(symbol, DatSymbolType.Int));
+                }
                 else
                 {
-                    if (isInsideArgList)
-                    {
-                        instructions.Add(PushSymbol(symbol, _assemblyBuilder.GetParameterType()));
-                    }
-                    else if (isInsideReturnStatement && activeBlock != null)
-                    {
-                        instructions.Add(PushSymbol(symbol, activeBlock.Symbol.ReturnType));
-                    }
-                    else if (isInsideAssignment)
-                    {
-                        instructions.Add(PushSymbol(symbol, _assemblyBuilder.AssignmentType));
-                    }
-                    
-                    else if (isInsideIfCondition && symbol.Type == DatSymbolType.Instance) // TODO I think this may be wrong
-                    {
-                        instructions.Add(new PushInt(symbol.Index));
-                    }
-                    else if (symbol.Type == DatSymbolType.Instance)
-                    {
-                        instructions.Add(new PushInstance(symbol));
-                    }
-                    
-                    else
-                    {
-                        instructions.Add(new PushVar(symbol));
-                    }
-                    
+                    instructions.Add(PushSymbol(symbol));
                 }
-
                 return instructions;
-
             }
+            
             else if (complexReferenceNodes.Length > 1)
             {
                 
@@ -597,24 +603,8 @@ namespace DaedalusCompiler.Compilation
                 string attributeName = attributePart.referenceNode().GetText();
                 DatSymbol attribute = _assemblyBuilder.ResolveAttribute(symbol, attributeName);              
                 
-                var simpleValueContext = attributePart.simpleValue();
-                int arrIndex = 0;
-                if (simpleValueContext != null)
-                {
-                    if (!int.TryParse(simpleValueContext.GetText(), out arrIndex))
-                    {
-                        var constSymbol = _assemblyBuilder.ResolveSymbol(simpleValueContext.GetText());
-                        if (!constSymbol.Flags.HasFlag(DatSymbolFlag.Const) || constSymbol.Type != DatSymbolType.Int)
-                        {
-                            throw new Exception($"Expected integer constant: {simpleValueContext.GetText()}");
-                        }
-
-                        arrIndex = (int) constSymbol.Content[0];
-                    }
-                }
-
                 List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
-                
+                int arrIndex = GetArrayIndex(attributePart);
                 
                 if (activeBlock != null && symbol != activeBlock.Symbol)
                 {

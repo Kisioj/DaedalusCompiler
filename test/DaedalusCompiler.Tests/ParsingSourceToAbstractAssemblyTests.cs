@@ -633,7 +633,6 @@ namespace DaedalusCompiler.Tests
                 new PushVar(Ref("testfunc.locfunc")),
                 new AssignFunc(),
 
-
                 new Ret(),
             };
             AssertInstructionsMatch();
@@ -661,6 +660,219 @@ namespace DaedalusCompiler.Tests
                 Ref("testfunc.locstring"),
                 Ref("testfunc.locclass"),
                 Ref("testfunc.locfunc"),
+            };
+            AssertSymbolsMatch();
+        }
+        
+        
+        [Fact]
+        public void TestFullAttributeAssignment()
+        {
+            _code = @"
+                class C_NPC {
+                var float varfloat;
+                var int varint;
+                var string varstring;
+                var C_NPC varclass;
+                var func varfunc;
+            };
+            
+            var float varfloat;
+            var int varint;
+            var string varstring;
+            var C_NPC varclass;
+            var func varfunc;
+            prototype varprototype(C_NPC) {};
+            instance varinstance(C_NPC) {};
+            instance varinstance2(varprototype) {};
+            
+            func void retvoid() {};
+            func float retfloat() {};
+            func int retint() {};
+            func string retstring() {};
+            func C_NPC retC_NPC() {};
+            
+            
+            func void testFunc() {
+                varinstance.varfloat = retfloat();
+                
+                varinstance.varint = varinstance2.varint;
+                varinstance.varint = varinstance2.varclass;
+                varinstance.varint = varprototype;
+                varinstance.varint = varinstance;
+                varinstance.varint = varinstance2;
+                varinstance.varint = retint();
+            
+                varinstance.varstring = varinstance2.varstring;
+                varinstance.varstring = retstring();
+            
+                varinstance.varclass = retC_NPC();
+            
+                varinstance.varfunc = varinstance2.varclass;
+                varinstance.varfunc = varinstance2.varfunc;
+                varinstance.varfunc = varprototype;
+                varinstance.varfunc = varinstance;
+                varinstance.varfunc = varinstance2;
+                varinstance.varfunc = retvoid;
+                varinstance.varfunc = retfloat;
+                varinstance.varfunc = retint;
+                varinstance.varfunc = retstring;
+                varinstance.varfunc = retC_NPC;
+            };
+            ";
+
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // varinstance.varfloat = retfloat();
+                new Call(Ref("retfloat")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfloat")),
+                new AssignFloat(),
+                
+                // varinstance.varint = varinstance2.varint;
+                new SetInstance(Ref("varinstance2")),
+                new PushVar(Ref("C_NPC.varint")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+                
+                // varinstance.varint = varinstance2.varclass;
+                new SetInstance(Ref("varinstance2")),
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+                
+                // varinstance.varint = varprototype;
+                new PushInt(RefIndex("varprototype")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+                
+                // varinstance.varint = varinstance;
+                new PushInt(RefIndex("varprototype")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+                
+                // varinstance.varint = varinstance2;
+                new PushInt(RefIndex("varprototype")),
+                new SetInstance(Ref("varinstance2")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+                
+                // varinstance.varint = retint();
+                new Call(Ref("retint")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Assign(),
+            
+                // varinstance.varstring = varinstance2.varstring;
+                new SetInstance(Ref("varinstance2")),
+                new PushInt(RefIndex("C_NPC.varstring")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varstring")),
+                new AssignString(),
+                
+                // varinstance.varstring = retstring();
+                new Call(Ref("retstring")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varstring")),
+                new AssignString(),
+            
+                // varinstance.varclass = retC_NPC();
+                new Call(Ref("retC_NPC")),
+                new PushInstance(Ref("C_NPC.varclass")),
+                new AssignInstance(),
+                
+                // varinstance.varfunc = varinstance2.varclass;
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = varinstance2.varfunc;
+                new PushInt(RefIndex("C_NPC.varfunc")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = varprototype;
+                new PushInt(RefIndex("varprototype")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = varinstance;
+                new PushInt(RefIndex("varinstance")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = varinstance2;
+                new PushInt(RefIndex("varinstance2")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = retvoid;
+                new PushInt(RefIndex("retvoid")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = retfloat;
+                new PushInt(RefIndex("retfloat")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = retint;
+                new PushInt(RefIndex("retint")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = retstring;
+                new PushInt(RefIndex("retstring")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+                // varinstance.varfunc = retC_NPC;
+                new PushInt(RefIndex("retC_NPC")),
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfunc")),
+                new AssignFunc(),
+                
+
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("C_NPC"),
+                Ref("C_NPC.varfloat"),
+                Ref("C_NPC.varint"),
+                Ref("C_NPC.varstring"),
+                Ref("C_NPC.varclass"),
+                Ref("C_NPC.varfunc"),
+                Ref("varfloat"),
+                Ref("varint"),
+                Ref("varstring"),
+                Ref("varclass"),
+                Ref("varfunc"),
+                Ref("varprototype"),
+                Ref("varinstance"),
+                Ref("varinstance2"),
+                Ref("retvoid"),
+                Ref("retfloat"),
+                Ref("retint"),
+                Ref("retstring"),
+                Ref("retC_NPC"),
+                Ref("testFunc"),
             };
             AssertSymbolsMatch();
         }
@@ -2429,6 +2641,120 @@ namespace DaedalusCompiler.Tests
             };
             AssertSymbolsMatch();
         }
+        
+        [Fact]
+        public void TestIfInstructionFull()
+        {
+            _code = @"
+                class C_NPC {
+                    var float varfloat;
+                    var int varint;
+                    var string varstring;
+                    var C_NPC varclass;
+                    var func varfunc;
+                };
+                
+                var float varfloat;
+                var int varint;
+                var string varstring;
+                var C_NPC varclass;
+                var func varfunc;
+                prototype varprototype(C_NPC) {};
+                instance varinstance(C_NPC) {};
+                instance varinstance2(varprototype) {};
+                func int retint() {};
+                
+                
+                func void testFunc() {
+                    if(varint) {};
+                    if(varclass) {};
+                    if(varprototype) {};
+                    if(varinstance) {};
+                    if(varinstance2) {};
+                    
+                    if(retint()) {};
+                    
+                    if(varinstance.varint) {};
+                    if(varinstance.varclass) {};
+                };
+
+            ";
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // if(varint)
+                new PushVar(Ref("varint")),
+                new JumpIfToLabel("label_0"),
+                // endif
+                new AssemblyLabel("label_0"),
+                
+                // if(varclass)
+                new PushInt(RefIndex("varclass")),
+                new JumpIfToLabel("label_1"),
+                // endif
+                new AssemblyLabel("label_1"),
+                
+                // if(varprototype)
+                new PushInt(RefIndex("varprototype")),
+                new JumpIfToLabel("label_2"),
+                // endif
+                new AssemblyLabel("label_2"),
+                
+                // if(varinstance)
+                new PushInt(RefIndex("varinstance")),
+                new JumpIfToLabel("label_3"),
+                // endif
+                new AssemblyLabel("label_3"),
+                
+                // if(varinstance2)
+                new PushInt(RefIndex("varinstance2")),
+                new JumpIfToLabel("label_4"),
+                // endif
+                new AssemblyLabel("label_4"),
+                        
+                // if(retint())
+                new Call(Ref("retint")),
+                new JumpIfToLabel("label_5"),
+                // endif
+                new AssemblyLabel("label_5"),
+                        
+                // if(varinstance.varint)
+                new PushVar(Ref("C_NPC.varint")),
+                new JumpIfToLabel("label_6"),
+                // endif
+                new AssemblyLabel("label_6"),
+                
+                // if(varinstance.varclass)
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new JumpIfToLabel("label_7"),
+                // endif
+                new AssemblyLabel("label_7"),
+                
+                new Ret()
+            };
+            AssertInstructionsMatch();
+
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("C_NPC"),
+                Ref("C_NPC.varfloat"),
+                Ref("C_NPC.varint"),
+                Ref("C_NPC.varstring"),
+                Ref("C_NPC.varclass"),
+                Ref("C_NPC.varfunc"),
+                Ref("varfloat"),
+                Ref("varint"),
+                Ref("varstring"),
+                Ref("varclass"),
+                Ref("varfunc"),
+                Ref("varprototype"),
+                Ref("varinstance"),
+                Ref("varinstance2"),
+                Ref("retint"),
+                Ref("testFunc"),
+            };
+            AssertSymbolsMatch();
+        }
 
         [Fact]
         public void TestIfAndElseInstruction()
@@ -2718,7 +3044,7 @@ namespace DaedalusCompiler.Tests
         }
         
         [Fact]
-        public void TestMoreFuncCalls()
+        public void TestFuncCallsWithArguments()
         {
             _externalCode = @"
                 var instance instance_help;
@@ -3032,6 +3358,120 @@ namespace DaedalusCompiler.Tests
             };
             AssertSymbolsMatch();
         }
+        
+        
+        [Fact]
+        public void TestFuncCallsWithAttributeArguments()
+        {
+            _externalCode = @"
+                func int WLD_DetectPlayer(var instance par0) {};
+            ";
+            _code = @"
+                class C_NPC {
+                    var float varfloat;
+                    var int varint;
+                    var string varstring;
+                    var C_NPC varclass;
+                    var func varfunc;
+                };
+                
+                instance varinstance(C_NPC) {};
+                
+                func void parfloat(var float par) {};
+                func void parint(var int par) {};
+                func void parstring(var string par) {};
+                func void parC_NPC(var C_NPC par) {};
+                func void parfunc(var func par) {};
+                
+                
+                
+                func void testFunc() {
+                    parfloat(varinstance.varfloat);
+                
+                    parint(varinstance.varint);
+                    parint(varinstance.varclass);
+                    
+                    parstring(varinstance.varstring);
+                
+                    parC_NPC(varinstance.varclass);
+                
+                    parfunc(varinstance.varclass);
+                    parfunc(varinstance.varfunc);
+                
+                    WLD_DetectPlayer(varinstance.varclass);
+                };
+            ";
+            
+            
+            _instructions = GetExecBlockInstructions("testFunc");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // parfloat(varinstance.varfloat);
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varfloat")),
+                new Call(Ref("parfloat")),
+                
+                // parint(varinstance.varint);
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Call(Ref("parint")),
+                
+                // parint(varinstance.varclass);
+                new SetInstance(Ref("varinstance")),
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new Call(Ref("parint")),
+                    
+                // parstring(varinstance.varstring);
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varstring")),
+                new Call(Ref("parstring")),
+                
+                // parC_NPC(varinstance.varclass);
+                new PushInstance(Ref("C_NPC.varclass")),
+                new Call(Ref("parC_NPC")),
+                
+                // parfunc(varinstance.varclass);
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new Call(Ref("parfunc")),
+                
+                // parfunc(varinstance.varfunc);
+                new PushInt(RefIndex("C_NPC.varfunc")),
+                new Call(Ref("parfunc")),
+                
+                // WLD_DetectPlayer(varinstance.varclass);
+                new PushInstance(Ref("C_NPC.varclass")),
+                new CallExternal(Ref("WLD_DetectPlayer")),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("WLD_DetectPlayer"),
+                Ref("WLD_DetectPlayer.par0"),
+                Ref("C_NPC"),
+                Ref("C_NPC.varfloat"),
+                Ref("C_NPC.varint"),
+                Ref("C_NPC.varstring"),
+                Ref("C_NPC.varclass"),
+                Ref("C_NPC.varfunc"),
+                Ref("varinstance"),
+                Ref("parfloat"),
+                Ref("parfloat.par"),
+                Ref("parint"),
+                Ref("parint.par"),
+                Ref("parstring"),
+                Ref("parstring.par"),
+                Ref("parC_NPC"),
+                Ref("parC_NPC.par"),
+                Ref("parfunc"),
+                Ref("parfunc.par"),
+                Ref("testFunc"),
+            };
+            AssertSymbolsMatch();
+        }
+        
         
         [Fact]
         public void TestMultiparameterFuncCall()
@@ -3576,6 +4016,271 @@ namespace DaedalusCompiler.Tests
                 Ref("testFunc.d"),
                 Ref("a"),
                 Ref("b"),
+            };
+            AssertSymbolsMatch(); 
+        }
+        
+        
+        [Fact]
+        public void TestFullReturn()
+        {
+            _code = @"
+                class C_NPC {
+                    var float varfloat;
+                    var int varint;
+                    var string varstring;
+                    var C_NPC varclass;
+                    var func varfunc;
+                };
+                
+                var float varfloat;
+                var int varint;
+                var string varstring;
+                var C_NPC varclass;
+                var func varfunc;
+                prototype varprototype(C_NPC) {};
+                instance varinstance(C_NPC) {};
+                
+                func void retvoid() { return; };
+                
+                func float retfloat00() { return; };
+                // func float retfloat01() { return 0; };
+                // func float retfloat02() { return ""zero""; };
+                // func float retfloat03() { return 0.5; };
+                // func float retfloat04() { return varfloat; };
+                // func float retfloat05() { return varint; };
+                // func float retfloat06() { return varstring; };
+                // func float retfloat07() { return varclass; };
+                // func float retfloat08() { return varfunc; };
+                // func float retfloat09() { return varprototype; };
+                // func float retfloat10() { return varinstance; };
+                // func float retfloat11() { return varinstance.varfloat; };
+                // func float retfloat12() { return varinstance.varint; };
+                // func float retfloat13() { return varinstance.varstring; };
+                // func float retfloat14() { return varinstance.varclass; };
+                // func float retfloat15() { return varinstance.varfunc; };
+                
+                // func int retint00() { return; };
+                func int retint01() { return 0; };
+                // func int retint02() { return ""zero""; };
+                // func int retint03() { return 0.5; };
+                // func int retint04() { return varfloat; };
+                func int retint05() { return varint; };
+                // func int retint06() { return varstring; };
+                func int retint07() { return varclass; };
+                // func int retint08() { return varfunc; };
+                func int retint09() { return varprototype; };
+                func int retint10() { return varinstance; };
+                // func int retint11() { return varinstance.varfloat; };
+                func int retint12() { return varinstance.varint; };
+                // func int retint13() { return varinstance.varstring; };
+                func int retint14() { return varinstance.varclass; };
+                // func int retint15() { return varinstance.varfunc; };
+                
+                // func string retstring00() { return; };
+                // func string retstring01() { return 0; };
+                func string retstring02() { return ""zero""; };
+                // func string retstring03() { return 0.5; };
+                // func string retstring04() { return varfloat; };
+                // func string retstring05() { return varint; };
+                func string retstring06() { return varstring; };
+                // func string retstring07() { return varclass; };
+                // func string retstring08() { return varfunc; };
+                // func string retstring09() { return varprototype; };
+                // func string retstring10() { return varinstance; };
+                // func string retstring11() { return varinstance.varfloat; };
+                // func string retstring12() { return varinstance.varint; };
+                func string retstring13() { return varinstance.varstring; };
+                // func string retstring14() { return varinstance.varclass; };
+                // func string retstring15() { return varinstance.varfunc; };
+                
+                func C_NPC retC_NPC00() { return; };
+                // func C_NPC retC_NPC01() { return 0; };
+                // func C_NPC retC_NPC02() { return ""zero""; };
+                // func C_NPC retC_NPC03() { return 0.5; };
+                // func C_NPC retC_NPC04() { return varfloat; };
+                // func C_NPC retC_NPC05() { return varint; };
+                // func C_NPC retC_NPC06() { return varstring; };
+                // func C_NPC retC_NPC07() { return varclass; };
+                // func C_NPC retC_NPC08() { return varfunc; };
+                // func C_NPC retC_NPC09() { return varprototype; };
+                // func C_NPC retC_NPC10() { return varinstance; };
+                // func C_NPC retC_NPC11() { return varinstance.varfloat; };
+                // func C_NPC retC_NPC12() { return varinstance.varint; };
+                // func C_NPC retC_NPC13() { return varinstance.varstring; };
+                // func C_NPC retC_NPC14() { return varinstance.varclass; };
+                // func C_NPC retC_NPC15() { return varinstance.varfunc; };
+            ";
+
+            char prefix = (char) 255;
+            
+            _instructions = GetExecBlockInstructions("retvoid");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return;
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retfloat00");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return;
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint01");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return 0;
+                new PushInt(0),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint05");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varint;
+                new PushVar(Ref("varint")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint07");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varclass;
+                new PushInt(RefIndex("varclass")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint09");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varprototype;
+                new PushInt(RefIndex("varprototype")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint10");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varinstance;
+                new PushInt(RefIndex("varinstance")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint12");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varinstance.varint;
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varint")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retint14");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varinstance.varclass;
+                new SetInstance(Ref("varinstance")),
+                new PushInt(RefIndex("C_NPC.varclass")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            
+            _instructions = GetExecBlockInstructions("retstring02");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return "zero";
+                new PushVar(Ref($"{prefix}10000")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retstring06");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varstring;
+                new PushVar(Ref("varstring")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retstring13");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return varinstance.varstring;
+                new SetInstance(Ref("varinstance")),
+                new PushVar(Ref("C_NPC.varstring")),
+                new Ret(),
+                
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _instructions = GetExecBlockInstructions("retC_NPC00");
+            _expectedInstructions = new List<AssemblyElement>
+            {
+                // return;
+                new Ret(),
+            };
+            AssertInstructionsMatch();
+            
+            _expectedSymbols = new List<DatSymbol>
+            {
+                Ref("C_NPC"),
+                Ref("C_NPC.varfloat"),
+                Ref("C_NPC.varint"),
+                Ref("C_NPC.varstring"),
+                Ref("C_NPC.varclass"),
+                Ref("C_NPC.varfunc"),
+                Ref("varfloat"),
+                Ref("varint"),
+                Ref("varstring"),
+                Ref("varclass"),
+                Ref("varfunc"),
+                Ref("varprototype"),
+                Ref("varinstance"),
+                Ref("retvoid"),
+                Ref("retfloat00"),
+                Ref("retint01"),
+                Ref("retint05"),
+                Ref("retint07"),
+                Ref("retint09"),
+                Ref("retint10"),
+                Ref("retint12"),
+                Ref("retint14"),
+                Ref("retstring02"),
+                Ref("retstring06"),
+                Ref("retstring13"),
+                Ref("retC_NPC00"),
+                Ref($"{prefix}10000"),
             };
             AssertSymbolsMatch(); 
         }
