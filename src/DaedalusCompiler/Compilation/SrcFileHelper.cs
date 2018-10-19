@@ -9,23 +9,25 @@ namespace DaedalusCompiler.Compilation
     {
         public static IEnumerable<string> LoadScriptsFilePaths(string srcFilePath)
         {
-            return LoadScriptsFilePaths(srcFilePath, new List<string>());
+            Path.GetFileName(srcFilePath);
+            return LoadScriptsFilePaths(srcFilePath, new HashSet<string>());
         }
 
-        private static IEnumerable<string> LoadScriptsFilePaths(string srcFilePath, List<string> alreadyLoadedSrcs)
+        private static IEnumerable<string> LoadScriptsFilePaths(string srcFilePath, HashSet<string> alreadyLoadedFiles)
         {
             if (Path.GetExtension(srcFilePath).ToLower() != ".src")
                 throw new Exception($"Invalid SRC file: '{srcFilePath}'.");
-
-            if (alreadyLoadedSrcs.Contains(srcFilePath))
+            
+            if (alreadyLoadedFiles.Contains(srcFilePath))
                 throw new Exception($"Cyclic dependency detected. SRC file '{srcFilePath}' is already loaded");
-            alreadyLoadedSrcs.Add(srcFilePath);
+            
+            alreadyLoadedFiles.Add(srcFilePath);
 
             try
             {
                 var lines = File.ReadAllLines(srcFilePath);
                 var basePath = Path.GetDirectoryName(srcFilePath);
-                var result = LoadScriptsFilePaths(basePath, lines, alreadyLoadedSrcs);
+                var result = LoadScriptsFilePaths(basePath, lines, alreadyLoadedFiles);
                 return result;
             }
             catch (Exception exc)
@@ -34,8 +36,7 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
-        private static IEnumerable<string> LoadScriptsFilePaths(string basePath, string[] srcLines,
-            List<string> alreadyLoadedSrcs)
+        private static IEnumerable<string> LoadScriptsFilePaths(string basePath, string[] srcLines, HashSet<string> alreadyLoadedFiles)
         {
             List<string> result = new List<string>();
 
@@ -44,7 +45,7 @@ namespace DaedalusCompiler.Compilation
                 try
                 {
                     bool containsWildcard = line.Contains("*");
-                    string fullPath = Path.Combine(basePath, line).Trim();
+                    string fullPath = Path.Combine(basePath, line).Trim().ToLower();
                     string pathExtension = Path.GetExtension(fullPath).ToLower();
 
                     if (containsWildcard && pathExtension == ".d")
@@ -52,16 +53,28 @@ namespace DaedalusCompiler.Compilation
                         string dirPath = Path.GetDirectoryName(fullPath);
                         string filenamePattern = Path.GetFileName(fullPath);
                         
-                        string[] fileNames = Directory.GetFiles(dirPath, filenamePattern);
-                        result.AddRange(fileNames);
+                        string[] filePaths = Directory.GetFiles(dirPath, filenamePattern);
+                        foreach (string filePath in filePaths)
+                        {
+                            string filePathLower = filePath.ToLower();
+                            if (!alreadyLoadedFiles.Contains(filePathLower))
+                            {
+                                alreadyLoadedFiles.Add(filePathLower);
+                                result.Add(filePathLower);
+                            }
+                        }
                     }
                     else if (pathExtension == ".d")
                     {
-                        result.Add(fullPath);
+                        if (!alreadyLoadedFiles.Contains(fullPath))
+                        {
+                            alreadyLoadedFiles.Add(fullPath);
+                            result.Add(fullPath);
+                        }
                     }
                     else if (pathExtension == ".src")
                     {
-                        result.AddRange(LoadScriptsFilePaths(fullPath, alreadyLoadedSrcs));
+                        result.AddRange(LoadScriptsFilePaths(fullPath, alreadyLoadedFiles));
                     }
                     else
                     {
