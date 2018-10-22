@@ -5,6 +5,22 @@ namespace DaedalusCompiler.Compilation
 {
     public static class SymbolBuilder
     {
+        public static DatSymbol BuildParameter(string name, DatSymbolType type, DatSymbolLocation location = null,
+            int parent = -1)
+        {
+            var symbol = new DatSymbol
+            {
+                Name = name,
+                Type = type,
+                ArrayLength = 0,
+                Content = null, // type == DatSymbolType.String ? new object[] {string.Empty} : new object[] {0},
+                Flags = 0,
+                Location = location,
+                ParentIndex = parent,
+            };
+
+            return symbol;
+        }
         public static DatSymbol BuildVariable(string name, DatSymbolType type, DatSymbolLocation location = null,
             int parent = -1)
         {
@@ -131,6 +147,12 @@ namespace DaedalusCompiler.Compilation
                 ClassSize = classSize,
                 ParentIndex = -1,
             };
+            
+            string lowerName = name.ToLower();
+            if (lowerName == "c_npc" || lowerName == "c_item")
+            {
+                symbol.ClassOffset = 288;
+            }
 
             return symbol;
         }

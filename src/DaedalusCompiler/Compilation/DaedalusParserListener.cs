@@ -86,7 +86,17 @@ namespace DaedalusCompiler.Compilation
             }
             else
             {
-                symbol = SymbolBuilder.BuildVariable(parameterName, parameterType.Value, location, parentId);
+                symbol = SymbolBuilder.BuildParameter(parameterName, parameterType.Value, location, parentId);
+                /*
+                if (_assemblyBuilder.IsCurrentlyParsingExternals)
+                {
+                    if (symbol.Type == DatSymbolType.Func)
+                    {
+                        symbol.Flags |= DatSymbolFlag.External;
+                    }
+                }
+                */
+
             }
 
             _assemblyBuilder.AddSymbol(symbol);
@@ -156,7 +166,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterVarDecl([NotNull] DaedalusParser.VarDeclContext context)
         {
-            if (context.Parent is DaedalusParser.DaedalusFileContext || _assemblyBuilder.IsContextInsideExecBlock())
+            if (context.Parent is DaedalusParser.DaedalusFileContext || _assemblyBuilder.IsContextInsideExecBlock()) // TODO is this check really necessary?
             {
                 var typeName = context.typeReference().GetText();
                 var type = DatSymbolTypeFromString(typeName);
@@ -220,7 +230,7 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.AddSymbol(classSymbol);
 
             var classId = classSymbol.Index;
-            int classVarOffset = 0;
+            int classVarOffset = classSymbol.ClassOffset;
             uint classLength = 0;
 
             // TODO: refactor later
@@ -266,7 +276,7 @@ namespace DaedalusCompiler.Compilation
             }
 
             classSymbol.ArrayLength = classLength;
-            classSymbol.ClassSize = classVarOffset;
+            classSymbol.ClassSize = classVarOffset - classSymbol.ClassVarOffset;
         }
 
         public override void EnterPrototypeDef([NotNull] DaedalusParser.PrototypeDefContext context)

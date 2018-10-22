@@ -146,7 +146,7 @@ namespace DaedalusCompiler.Dat
 
             // Save ArrayLength & Type & Flags
             var bitField = 0u;
-            if (Type == DatSymbolType.Func)
+            if (Type == DatSymbolType.Func && !Flags.HasFlag(DatSymbolFlag.Classvar))
             {
                 bitField |= ParametersCount;
             }
@@ -279,7 +279,7 @@ namespace DaedalusCompiler.Dat
 
             if (symbol.Flags.HasFlag(DatSymbolFlag.Classvar) == false)
             {
-                if (symbol.Type == DatSymbolType.Func || symbol.Type == DatSymbolType.Class || symbol.Type == DatSymbolType.Prototype)
+                if ((symbol.Type == DatSymbolType.Func) || symbol.Type == DatSymbolType.Class || symbol.Type == DatSymbolType.Prototype)
                 {
                     result = new object[1];
                 }

@@ -666,7 +666,7 @@ namespace DaedalusCompiler.Compilation
         {
             if (IsCurrentlyParsingExternals)
             {
-                if (symbol.Type == DatSymbolType.Func)
+                if (symbol.Type == DatSymbolType.Func && symbol.Flags.HasFlag(DatSymbolFlag.Const))
                 {
                     symbol.Flags |= DatSymbolFlag.External;
                 }
