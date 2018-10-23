@@ -7,6 +7,20 @@ namespace DaedalusCompiler.Compilation
 {
     public static class SrcFileHelper
     {
+
+        public static string[] GetLines(string srcFilePath)
+        {
+            string[] lines = File.ReadAllLines(srcFilePath);
+            for (int i = 0; i < lines.Length; ++i)
+            {
+                if (lines[i].Contains("//"))
+                {
+                    lines[i] = lines[i].Split("//").First();
+                }
+            }
+            return lines;
+        }
+        
         public static IEnumerable<string> LoadScriptsFilePaths(string srcFilePath)
         {
             Path.GetFileName(srcFilePath);
@@ -25,7 +39,7 @@ namespace DaedalusCompiler.Compilation
 
             try
             {
-                var lines = File.ReadAllLines(srcFilePath);
+                var lines = GetLines(srcFilePath);
                 var basePath = Path.GetDirectoryName(srcFilePath);
                 var result = LoadScriptsFilePaths(basePath, lines, alreadyLoadedFiles);
                 return result;
