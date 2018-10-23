@@ -28,10 +28,13 @@ namespace DaedalusCompiler.Dat
         External = 8,
         Merged = 16,
     }
+    
 
     [DebuggerDisplay("{Type} {ReturnType} {Name} '{Flags}'")]
     public class DatSymbol
     {
+        public const int NULL_INDEX = -1;
+        
         /// <summary>
         /// Symbol's index, id. It shows how many symbols were loaded before this one.
         /// </summary>
@@ -46,12 +49,12 @@ namespace DaedalusCompiler.Dat
         /// Length for array variables or constants. Set to 1 for non array variables or constants
         /// </summary>
         public uint ArrayLength { get; set; }
-        
+
         /// <summary>
         /// Only for functions
         /// </summary>
         public uint ParametersCount { get; set; }
-
+        
         /// <summary>
         /// Symbol type ex. 'class' or 'func'
         /// </summary>
@@ -86,7 +89,7 @@ namespace DaedalusCompiler.Dat
         /// Content of const variable or array
         /// </summary>
         public object[] Content { get; set; }
-        
+
         /// <summary>
         /// Address of first token. Only set for 'function', 'instance' and 'prototype' symbols.
         /// </summary>
@@ -96,7 +99,7 @@ namespace DaedalusCompiler.Dat
         /// Only set for 'class' symbol.
         /// </summary>
         public int ClassOffset  { get; set; }
-
+        
         /// <summary>
         /// Reference to parent symbol for nested symbols like class variables
         /// </summary>
@@ -197,7 +200,7 @@ namespace DaedalusCompiler.Dat
                         }
                         break;
                 }
-            }     
+            }
 
             // Save parent
             writer.Write(ParentIndex);
@@ -265,7 +268,7 @@ namespace DaedalusCompiler.Dat
                     symbol.Content = GetContentIfExists(reader, symbol);
                     break;
             }
-            
+
             symbol.ParentIndex = reader.ReadInt32();
 
             return symbol;
@@ -279,7 +282,7 @@ namespace DaedalusCompiler.Dat
 
             if (symbol.Flags.HasFlag(DatSymbolFlag.Classvar) == false)
             {
-                if ((symbol.Type == DatSymbolType.Func) || symbol.Type == DatSymbolType.Class || symbol.Type == DatSymbolType.Prototype)
+                if (symbol.Type == DatSymbolType.Func || symbol.Type == DatSymbolType.Class || symbol.Type == DatSymbolType.Prototype)
                 {
                     result = new object[1];
                 }
