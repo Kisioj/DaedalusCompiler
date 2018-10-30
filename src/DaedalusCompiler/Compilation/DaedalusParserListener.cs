@@ -435,62 +435,14 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideIfCondition = false;
         }
 
-        public override void EnterBitMoveOperator(DaedalusParser.BitMoveOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
 
-        public override void EnterBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
-        {
-            _assemblyBuilder.ExpressionLeftSideStart();
-        }
 
-        public override void ExitBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
-        {
-            var exprOperator = context.bitMoveOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterCompExpression(DaedalusParser.CompExpressionContext context)
-        {
-            _assemblyBuilder.ExpressionLeftSideStart();
-        }
-
-        public override void ExitCompExpression(DaedalusParser.CompExpressionContext context)
-        {
-            var exprOperator = context.compOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterCompOperator(DaedalusParser.CompOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
-
-        public override void EnterEqExpression(DaedalusParser.EqExpressionContext context)
-        {
-            _assemblyBuilder.ExpressionLeftSideStart();
-        }
-
-        public override void ExitEqExpression(DaedalusParser.EqExpressionContext context)
-        {
-            var exprOperator = context.eqOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterEqOperator(DaedalusParser.EqOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
         
         public override void ExitReference(DaedalusParser.ReferenceContext context)
         {
             var referenceAtoms = context.referenceAtom();
             
-            List<AssemblyInstruction> instructions = new List<AssemblyInstruction>();
+            List<AssemblyElement> instructions = new List<AssemblyElement>();
             if (_assemblyBuilder.IsInsideArgList || _assemblyBuilder.IsInsideAssignment || _assemblyBuilder.IsInsideIfCondition || _assemblyBuilder.IsInsideReturnStatement)
             {
                 instructions.Add(new LazyReferenceAtomInstructions(_assemblyBuilder.MakeSnapshot(), referenceAtoms));
@@ -502,7 +454,7 @@ namespace DaedalusCompiler.Compilation
             
             if (!_assemblyBuilder.IsInsideEvalableStatement)
             {
-                _assemblyBuilder.AddInstructions(instructions.ToArray());   
+                _assemblyBuilder.AddInstructions(instructions);   
             }
         }
         
@@ -510,7 +462,7 @@ namespace DaedalusCompiler.Compilation
         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
         {
             var referenceAtoms = context.referenceLeftSide().referenceAtom();
-            List<AssemblyInstruction> instructions = _assemblyBuilder.GetReferenceAtomInstructions(referenceAtoms);
+            List<AssemblyElement> instructions = _assemblyBuilder.GetReferenceAtomInstructions(referenceAtoms);
             _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
             _assemblyBuilder.IsInsideAssignment = true;
             _assemblyBuilder.AssignmentType = _assemblyBuilder.GetReferenceType(referenceAtoms);
@@ -526,30 +478,18 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.AssigmentEnd(assignmentOperator);
         }
 
+        
+        
+        
         public override void EnterFuncCallValue(DaedalusParser.FuncCallValueContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
-            _assemblyBuilder.FuncCallStart(context);
+            string funcName = context.funcCall().nameNode().GetText();
+            _assemblyBuilder.FuncCallStart(funcName);
         }
 
         public override void ExitFuncCallValue(DaedalusParser.FuncCallValueContext context)
         {
-            var funcName = context.funcCall().nameNode().GetText();
-            var symbol = _assemblyBuilder.GetSymbolByName(funcName);
-
-            if (symbol == null)
-            {
-                throw new Exception($"Function '{funcName}' not defined");
-            }
-
-            if (symbol.Flags.HasFlag(DatSymbolFlag.External))
-            {
-                _assemblyBuilder.FuncCallEnd(new CallExternal(symbol));
-            }
-            else
-            {
-                _assemblyBuilder.FuncCallEnd(new Call(symbol));
-            }
+            _assemblyBuilder.FuncCallEnd();  
         }
 
         public override void EnterFuncArgExpression(DaedalusParser.FuncArgExpressionContext context)
@@ -602,141 +542,183 @@ namespace DaedalusCompiler.Compilation
                 _assemblyBuilder.AddInstruction(new PushVar(symbol));
             }
         }
-
-        public override void EnterAddExpression(DaedalusParser.AddExpressionContext context)
+        
+        
+        /*
+         *  ENTER EXPRESSION
+         */
+        public override void EnterBracketExpression(DaedalusParser.BracketExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
-        public override void ExitAddExpression(DaedalusParser.AddExpressionContext context)
+        
+        public override void EnterOneArgExpression(DaedalusParser.OneArgExpressionContext context)
         {
-            var exprOperator = context.addOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
-        public override void EnterAddOperator(DaedalusParser.AddOperatorContext context)
-        {
-            //TODO add comment why here we invoke that
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
-
-        public override void EnterMultOperator(DaedalusParser.MultOperatorContext context)
-        {
-            //TODO add comment why here we invoke that
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
-
+        
         public override void EnterMultExpression(DaedalusParser.MultExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
-        public override void ExitMultExpression(DaedalusParser.MultExpressionContext context)
+        
+        public override void EnterAddExpression(DaedalusParser.AddExpressionContext context)
         {
-            var exprOperator = context.multOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
-        public override void EnterBinAndOperator(DaedalusParser.BinAndOperatorContext context)
+        
+        public override void EnterBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
         {
-            _assemblyBuilder.ExpressionRightSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
+        
+        public override void EnterCompExpression(DaedalusParser.CompExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionStart();
+        }
+        
+        public override void EnterEqExpression(DaedalusParser.EqExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionStart();
+        }
+        
         public override void EnterBinAndExpression(DaedalusParser.BinAndExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
-
-        public override void ExitBinAndExpression(DaedalusParser.BinAndExpressionContext context)
-        {
-            var exprOperator = context.binAndOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterBinOrOperator(DaedalusParser.BinOrOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
-        }
-
+        
         public override void EnterBinOrExpression(DaedalusParser.BinOrExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
-        }
-
-        public override void ExitBinOrExpression(DaedalusParser.BinOrExpressionContext context)
-        {
-            var exprOperator = context.binOrOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterLogAndOperator(DaedalusParser.LogAndOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
 
         public override void EnterLogAndExpression(DaedalusParser.LogAndExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
-        }
-
-        public override void ExitLogAndExpression(DaedalusParser.LogAndExpressionContext context)
-        {
-            var exprOperator = context.logAndOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
-        }
-
-        public override void EnterLogOrOperator(DaedalusParser.LogOrOperatorContext context)
-        {
-            _assemblyBuilder.ExpressionRightSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
         }
 
         public override void EnterLogOrExpression(DaedalusParser.LogOrExpressionContext context)
         {
-            _assemblyBuilder.ExpressionLeftSideStart();
+            _assemblyBuilder.OperatorExpressionStart();
+        }
+        
+
+        /*
+         *  EXIT EXPRESSION
+         */
+        public override void ExitBracketExpression(DaedalusParser.BracketExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitOneArgExpression(DaedalusParser.OneArgExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitMultExpression(DaedalusParser.MultExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitAddExpression(DaedalusParser.AddExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitCompExpression(DaedalusParser.CompExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitEqExpression(DaedalusParser.EqExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitBinAndExpression(DaedalusParser.BinAndExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+        
+        public override void ExitBinOrExpression(DaedalusParser.BinOrExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
+        }
+
+        public override void ExitLogAndExpression(DaedalusParser.LogAndExpressionContext context)
+        {
+            _assemblyBuilder.OperatorExpressionEnd();
         }
 
         public override void ExitLogOrExpression(DaedalusParser.LogOrExpressionContext context)
         {
-            var exprOperator = context.logOrOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator);
-            _assemblyBuilder.ExpressionEnd(instruction);
+            _assemblyBuilder.OperatorExpressionEnd();
         }
+        
 
-        public override void EnterOneArgOperator(DaedalusParser.OneArgOperatorContext context)
+        /*
+         *  ENTER OPERATOR
+         */
+        public override void ExitOneArgOperator(DaedalusParser.OneArgOperatorContext context)
         {
             if (_assemblyBuilder.IsInsideOneArgOperatorsEvaluationMode())
             {
                 return;
             }
-
-            _assemblyBuilder.ExpressionRightSideStart();
+            _assemblyBuilder.ExitOperator(context.GetText(), twoArg:false);
         }
-
-        public override void EnterOneArgExpression(DaedalusParser.OneArgExpressionContext context)
+        
+        public override void ExitMultOperator(DaedalusParser.MultOperatorContext context)
         {
-            if (_assemblyBuilder.IsInsideOneArgOperatorsEvaluationMode())
-            {
-                return;
-            }
-            _assemblyBuilder.ExpressionLeftSideStart();
+            _assemblyBuilder.ExitOperator(context.GetText());
         }
-
-        public override void ExitOneArgExpression(DaedalusParser.OneArgExpressionContext context)
+        
+        public override void ExitAddOperator(DaedalusParser.AddOperatorContext context)
         {
-            if (_assemblyBuilder.IsInsideOneArgOperatorsEvaluationMode())
-            {
-                return;
-            }
-            
-            var exprOperator = context.oneArgOperator().GetText();
-            var instruction = AssemblyBuilderHelpers.GetInstructionForOperator(exprOperator, false);
-            _assemblyBuilder.ExpressionEnd(instruction);
+            _assemblyBuilder.ExitOperator(context.GetText());
         }
+        
+        public override void ExitBitMoveOperator(DaedalusParser.BitMoveOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitCompOperator(DaedalusParser.CompOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitEqOperator(DaedalusParser.EqOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitBinAndOperator(DaedalusParser.BinAndOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitBinOrOperator(DaedalusParser.BinOrOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitLogAndOperator(DaedalusParser.LogAndOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
+        public override void ExitLogOrOperator(DaedalusParser.LogOrOperatorContext context)
+        {
+            _assemblyBuilder.ExitOperator(context.GetText());
+        }
+        
 
         private DatSymbolType DatSymbolTypeFromString(string typeName)
         {
