@@ -46,7 +46,7 @@ namespace DaedalusCompiler.Tests
             }
 
             
-            BaseExecBlock block = _assemblyBuilder.ExecBlocks.Find(execBlock =>
+            BaseExecBlockContext block = _assemblyBuilder.ExecBlocks.Find(execBlock =>
                 execBlock.GetSymbol().Name.ToUpper() == execBlockName.ToUpper());
 
             _assemblyBuilder.ActiveExecBlock = block;

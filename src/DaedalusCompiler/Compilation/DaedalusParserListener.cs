@@ -24,7 +24,7 @@ namespace DaedalusCompiler.Compilation
             var parametrDeclContexts = context.parameterDecl();
             foreach (var parameterDeclContext in parametrDeclContexts.Reverse())
             {
-                BaseExecBlock baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
+                BaseExecBlockContext baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
                 string execBlockName = baseExecBlock.GetSymbol().Name;
                 string parameterLocalName = parameterDeclContext.nameNode().GetText();
                 string parameterName = $"{execBlockName}.{parameterLocalName}";
@@ -48,7 +48,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterParameterDecl(DaedalusParser.ParameterDeclContext context)
         {
-            BaseExecBlock baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
+            BaseExecBlockContext baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
             string execBlockName = baseExecBlock.GetSymbol().Name;
             string parameterLocalName = context.nameNode().GetText();
             string parameterName = $"{execBlockName}.{parameterLocalName}";
@@ -121,7 +121,7 @@ namespace DaedalusCompiler.Compilation
                     var name = constValueContext.nameNode().GetText();
                     if (_assemblyBuilder.IsContextInsideExecBlock())
                     {
-                        BaseExecBlock baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
+                        BaseExecBlockContext baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
                         string execBlockName = baseExecBlock.GetSymbol().Name;
                         name = $"{execBlockName}.{name}";
                     }
@@ -185,7 +185,7 @@ namespace DaedalusCompiler.Compilation
                         if (_assemblyBuilder.IsContextInsideExecBlock())
                         {
                             // TODO consider making assemblyBuilder.active public and using it here
-                            BaseExecBlock baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
+                            BaseExecBlockContext baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
                             string execBlockName = baseExecBlock.GetSymbol().Name;
                             name = $"{execBlockName}.{name}";
                         }
@@ -287,13 +287,11 @@ namespace DaedalusCompiler.Compilation
             var prototypeSymbol = SymbolBuilder.BuildPrototype(prototypeName, referenceSymbolId, location);
             _assemblyBuilder.AddSymbol(prototypeSymbol);
 
-            _assemblyBuilder.ExecBlockStart(prototypeSymbol, ExecutebleBlockType.PrototypeConstructor);
+            _assemblyBuilder.ExecBlockStart(prototypeSymbol, ExecBlockType.Prototype);
         }
 
         public override void ExitPrototypeDef(DaedalusParser.PrototypeDefContext context)
         {
-            // we invoke execBlockEnd, thanks that ab will assign all instructions
-            // to currently exited prototype constructor
             _assemblyBuilder.AddInstruction(new Ret());
             _assemblyBuilder.ExecBlockEnd();
         }
@@ -310,7 +308,7 @@ namespace DaedalusCompiler.Compilation
             instanceSymbol.Flags |= DatSymbolFlag.Const;
             _assemblyBuilder.AddSymbol(instanceSymbol);
 
-            _assemblyBuilder.ExecBlockStart(instanceSymbol, ExecutebleBlockType.InstanceConstructor);
+            _assemblyBuilder.ExecBlockStart(instanceSymbol, ExecBlockType.Instance);
 
             if (refSymbol.Type == DatSymbolType.Prototype)
             {
@@ -320,8 +318,6 @@ namespace DaedalusCompiler.Compilation
      
         public override void ExitInstanceDef(DaedalusParser.InstanceDefContext context)
         {
-            // we invoke execBlockEnd, thanks that ab will assign all instructions
-            // to currently exited instance constructor
             _assemblyBuilder.AddInstruction(new Ret());
             _assemblyBuilder.ExecBlockEnd();
         }
@@ -357,13 +353,11 @@ namespace DaedalusCompiler.Compilation
 
             var symbol = SymbolBuilder.BuildFunc(name, parametersCount, type); // TODO : Validate params
             _assemblyBuilder.AddSymbol(symbol);
-            _assemblyBuilder.ExecBlockStart(symbol, ExecutebleBlockType.Function);
+            _assemblyBuilder.ExecBlockStart(symbol, ExecBlockType.Function);
         }
 
         public override void ExitFunctionDef([NotNull] DaedalusParser.FunctionDefContext context)
         {
-            // we invoke execBlockEnd, thanks that ab will assign all instructions
-            // to currently exited function
             _assemblyBuilder.GetCurrentSymbol().Location = GetLocation(context);
             _assemblyBuilder.AddInstruction(new Ret());
             _assemblyBuilder.ExecBlockEnd();
@@ -380,50 +374,57 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideReturnStatement = false;
         }
 
+        
+        
+        
+        
+        
         public override void EnterIfBlockStatement(DaedalusParser.IfBlockStatementContext context)
         {
-            _assemblyBuilder.ConditionalStart();
+            _assemblyBuilder.IfBlockStatementStart();
         }
 
         public override void ExitIfBlockStatement(DaedalusParser.IfBlockStatementContext context)
         {
-            _assemblyBuilder.ConditionalEnd();
-            //assemblyBuilder.ifStatementEnd();
+            _assemblyBuilder.IfBlockStatementEnd();
         }
 
 
+        
         public override void EnterIfBlock(DaedalusParser.IfBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockConditionStart(IfBlockType.If);
+            _assemblyBuilder.IfBlockStart();
         }
 
         public override void ExitIfBlock(DaedalusParser.IfBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockBodyEnd();
+            _assemblyBuilder.IfBlockEnd();
         }
 
+        
         public override void EnterElseIfBlock(DaedalusParser.ElseIfBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockConditionStart(IfBlockType.ElseIf);
+            _assemblyBuilder.ElseIfBlockStart();
         }
 
         public override void ExitElseIfBlock(DaedalusParser.ElseIfBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockBodyEnd();
+            _assemblyBuilder.ElseIfBlockEnd();
         }
 
+        
         public override void EnterElseBlock(DaedalusParser.ElseBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockConditionStart(IfBlockType.Else);
-            // else does't have condition so we call here end of condition
-            _assemblyBuilder.ConditionalBlockConditionEnd();
+            _assemblyBuilder.ElseBlockStart();
         }
 
         public override void ExitElseBlock(DaedalusParser.ElseBlockContext context)
         {
-            _assemblyBuilder.ConditionalBlockBodyEnd();
+            _assemblyBuilder.ElseBlockEnd();
         }
 
+        
+        
         public override void EnterIfCondition(DaedalusParser.IfConditionContext context)
         {
             _assemblyBuilder.IsInsideIfCondition = true;
@@ -431,7 +432,6 @@ namespace DaedalusCompiler.Compilation
         
         public override void ExitIfCondition(DaedalusParser.IfConditionContext context)
         {
-            _assemblyBuilder.ConditionalBlockConditionEnd();
             _assemblyBuilder.IsInsideIfCondition = false;
         }
 
@@ -549,57 +549,57 @@ namespace DaedalusCompiler.Compilation
          */
         public override void EnterBracketExpression(DaedalusParser.BracketExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterOneArgExpression(DaedalusParser.OneArgExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterMultExpression(DaedalusParser.MultExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterAddExpression(DaedalusParser.AddExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterCompExpression(DaedalusParser.CompExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterEqExpression(DaedalusParser.EqExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterBinAndExpression(DaedalusParser.BinAndExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
         public override void EnterBinOrExpression(DaedalusParser.BinOrExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
 
         public override void EnterLogAndExpression(DaedalusParser.LogAndExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
 
         public override void EnterLogOrExpression(DaedalusParser.LogOrExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionStart();
+            _assemblyBuilder.ExpressionStart();
         }
         
 
@@ -608,57 +608,57 @@ namespace DaedalusCompiler.Compilation
          */
         public override void ExitBracketExpression(DaedalusParser.BracketExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitOneArgExpression(DaedalusParser.OneArgExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitMultExpression(DaedalusParser.MultExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitAddExpression(DaedalusParser.AddExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitBitMoveExpression(DaedalusParser.BitMoveExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitCompExpression(DaedalusParser.CompExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitEqExpression(DaedalusParser.EqExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitBinAndExpression(DaedalusParser.BinAndExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
         public override void ExitBinOrExpression(DaedalusParser.BinOrExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
 
         public override void ExitLogAndExpression(DaedalusParser.LogAndExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
 
         public override void ExitLogOrExpression(DaedalusParser.LogOrExpressionContext context)
         {
-            _assemblyBuilder.OperatorExpressionEnd();
+            _assemblyBuilder.ExpressionEnd();
         }
         
 
