@@ -596,12 +596,10 @@ namespace DaedalusCompiler.Compilation
             return IsInsideConstDef || isInsideFloatAssignment || isInsideFloatArgument;
         }
 
-        /*
         public string GetAssembler()
         {
             return new AssemblyBuilderTraverser().GetAssembler(ExecBlocks);
         }
-        */
 
         public void SaveToDat(string filename)
         {

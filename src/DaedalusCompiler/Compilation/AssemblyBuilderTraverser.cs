@@ -60,12 +60,11 @@ namespace DaedalusCompiler.Compilation
             {
                 _buildAcc += $"SetInstance {setInstanceElement.Symbol.Name}\n";
             }
-            /*
-            else if (element is AssemblyIfStatement ifElement)
+            else if (element is IfBlockStatementContext context)
             {
-                var ifBlock = ifElement.IfBlock;
-                var elseIfBlocks = ifElement.ElseIfBlock;
-                var elseInstructions = ifElement.ElseBody;
+                var ifBlock = context.IfBlock;
+                var elseIfBlocks = context.ElseIfBlocks;
+                var elseInstructions = context.ElseBlock.Body;
                 var ifStatementEndLabel = GetLabel();
                 var nextJumpLabel = ifStatementEndLabel;
 
@@ -144,7 +143,6 @@ namespace DaedalusCompiler.Compilation
             {
                 _buildAcc += $"PushInt {pushint.Value}\n";
             }
-            */
         }
     }
 }

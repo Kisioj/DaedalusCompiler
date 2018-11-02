@@ -41,7 +41,7 @@ namespace DaedalusCompiler.Compilation
                 assemblyBuilder.Finish();
                 if (compileToAssembly)
                 {
-                    //Console.WriteLine(assemblyBuilder.GetAssembler());
+                    Console.WriteLine(assemblyBuilder.GetAssembler());
                 }
                 else
                 {
