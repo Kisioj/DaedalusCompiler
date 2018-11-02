@@ -463,7 +463,7 @@ namespace DaedalusCompiler.Compilation
         {
             var referenceAtoms = context.referenceLeftSide().referenceAtom();
             List<AssemblyElement> instructions = _assemblyBuilder.GetReferenceAtomInstructions(referenceAtoms);
-            _assemblyBuilder.AssigmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
+            _assemblyBuilder.AssignmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
             _assemblyBuilder.IsInsideAssignment = true;
             _assemblyBuilder.AssignmentType = _assemblyBuilder.GetReferenceType(referenceAtoms);
         }
@@ -475,7 +475,7 @@ namespace DaedalusCompiler.Compilation
             
             string assignmentOperator = context.assignmentOperator().GetText();
 
-            _assemblyBuilder.AssigmentEnd(assignmentOperator);
+            _assemblyBuilder.AssignmentEnd(assignmentOperator);
         }
 
         

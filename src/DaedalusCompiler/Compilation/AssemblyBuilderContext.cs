@@ -7,7 +7,7 @@ namespace DaedalusCompiler.Compilation
 {
     
     
-    public class AssemblyBuilderContext
+    public abstract class AssemblyBuilderContext
     {
         
         public readonly AssemblyBuilderContext Parent;
@@ -22,11 +22,8 @@ namespace DaedalusCompiler.Compilation
             throw new NotImplementedException();
         }
         
-        public virtual List<AssemblyElement> GetInstructions()
-        {
-            throw new NotImplementedException();
-        }
-        
+        public abstract List<AssemblyElement> GetInstructions();
+
         public virtual void AddInstruction(AssemblyElement element)
         {
             throw new NotImplementedException();

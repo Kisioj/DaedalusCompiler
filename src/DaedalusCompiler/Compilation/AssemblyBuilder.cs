@@ -32,13 +32,16 @@ namespace DaedalusCompiler.Compilation
     public class AssemblyBuilder
     {
         public readonly List<BaseExecBlockContext> ExecBlocks;
+        public BaseExecBlockContext ActiveExecBlock;
+        
         public readonly List<DatSymbol> Symbols;
         private readonly Dictionary<string, DatSymbol> _symbolsDict;
-        public BaseExecBlockContext ActiveExecBlock;
+        
         private AssemblyBuilderContext _activeContext;
         private List<SymbolInstruction> _assignmentLeftSide;
         public FuncCallContext FuncCallCtx;
-        //private int _labelIndexGenerator;
+
+        
         private int _nextStringSymbolNumber;
         public bool IsInsideEvalableStatement;
         public bool IsCurrentlyParsingExternals;
@@ -59,7 +62,8 @@ namespace DaedalusCompiler.Compilation
             ActiveExecBlock = null;
             _assignmentLeftSide = new List<SymbolInstruction>();
             FuncCallCtx = null;
-            //_labelIndexGenerator = 0;
+
+            
             _nextStringSymbolNumber = 10000;
             IsInsideEvalableStatement = false;
             IsCurrentlyParsingExternals = false;
@@ -331,17 +335,16 @@ namespace DaedalusCompiler.Compilation
 
         public void ExecBlockEnd()
         {
-            //ActiveExecBlock.Body = _activeContext.GetInstructions();
             ActiveExecBlock = null;
             ActiveContextEnd();
         }
 
-        public void AssigmentStart(SymbolInstruction[] instructions)
+        public void AssignmentStart(SymbolInstruction[] instructions)
         {
             _assignmentLeftSide.AddRange(instructions);
         }
 
-        public void AssigmentEnd(string assignmentOperator)
+        public void AssignmentEnd(string assignmentOperator)
         {
             //TODO check if there are any possibilities of assignmentLeftSide longer than 2 instructions?
             var operationType = _assignmentLeftSide.Last().Symbol.Type; 
