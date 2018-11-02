@@ -332,7 +332,7 @@ namespace DaedalusCompiler.Compilation
         public void ExecBlockEnd()
         {
             //ActiveExecBlock.Body = _activeContext.GetInstructions();
-            //ActiveExecBlock = null;
+            ActiveExecBlock = null;
             ActiveContextEnd();
         }
 

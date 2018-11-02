@@ -144,18 +144,18 @@ namespace DaedalusCompiler.Compilation
     
     public class IfBlockStatementContext : AssemblyBuilderContext
     {
-        public IfBlockContext IfBlock;
-        public readonly List<ElseIfBlockContext> ElseIfBlocks;
-        public ElseBlockContext ElseBlock;
+        private IfBlockContext _ifBlock;
+        private readonly List<ElseIfBlockContext> _elseIfBlocks;
+        private ElseBlockContext _elseBlock;
 
-        private static int _nextLabelIndex = 0;
+        public static int NextLabelIndex = 0;
         
 
         public IfBlockStatementContext(AssemblyBuilderContext parent) : base(parent)
         {
-            IfBlock = null;
-            ElseIfBlocks = new List<ElseIfBlockContext>();
-            ElseBlock = null;
+            _ifBlock = null;
+            _elseIfBlocks = new List<ElseIfBlockContext>();
+            _elseBlock = null;
         }
 
         public override void FetchInstructions(AssemblyBuilderContext context)
@@ -163,22 +163,22 @@ namespace DaedalusCompiler.Compilation
             switch (context)
             {
                 case IfBlockContext ifBlockContext:
-                    IfBlock = ifBlockContext;
+                    _ifBlock = ifBlockContext;
                     break;
                 case ElseIfBlockContext elseIfBlockContext:
-                    ElseIfBlocks.Add(elseIfBlockContext);
+                    _elseIfBlocks.Add(elseIfBlockContext);
                     break;
                 case ElseBlockContext elseBlockContext:
-                    ElseBlock = elseBlockContext;
+                    _elseBlock = elseBlockContext;
                     break;
                 default:
                     throw new NotImplementedException();
             }
         }
 
-        public string GetNextLabel()
+        private string GetNextLabel()
         {
-            return $"label_{_nextLabelIndex++}";
+            return $"label_{NextLabelIndex++}";
         }
         
         public override List<AssemblyElement> GetInstructions()
@@ -191,8 +191,8 @@ namespace DaedalusCompiler.Compilation
             
             List<ConditionalBlockContext> conditionalBlocks = new List<ConditionalBlockContext>();
             
-            conditionalBlocks.Add(IfBlock);
-            conditionalBlocks.AddRange(ElseIfBlocks);
+            conditionalBlocks.Add(_ifBlock);
+            conditionalBlocks.AddRange(_elseIfBlocks);
             
             foreach (var conditionalBlock in conditionalBlocks)
             {
@@ -201,7 +201,7 @@ namespace DaedalusCompiler.Compilation
                 bool isLastIteration = (conditionalBlock == conditionalBlocks.Last());
                 if (isLastIteration)
                 {
-                    if (ElseBlock != null)
+                    if (_elseBlock != null)
                     {
                         elseStartLabel = GetNextLabel();
                         instructions.Add(new JumpIfToLabel(elseStartLabel));
@@ -224,10 +224,10 @@ namespace DaedalusCompiler.Compilation
                 }
             }
 
-            if (ElseBlock != null)
+            if (_elseBlock != null)
             {
                 instructions.Add(new AssemblyLabel(elseStartLabel));
-                instructions.AddRange(ElseBlock.Body);
+                instructions.AddRange(_elseBlock.Body);
             }
 
             instructions.Add(new AssemblyLabel(statementEndLabel));
@@ -245,7 +245,26 @@ namespace DaedalusCompiler.Compilation
         {
             Condition = new List<AssemblyElement>();
         }
+        
+        public override void AddInstruction(AssemblyElement element)
+        {
+            AddInstructions(new List<AssemblyElement>{element});
+        }
+        
+        public override void AddInstructions(List<AssemblyElement> elements)
+        {
+            if (Condition.Count == 0)
+            {
+                Condition.AddRange(elements);
+            }
+            else
+            {
+                Body.AddRange(elements);
+            }
+            
+        }
     }
+    
 
     
     public class IfBlockContext : ConditionalBlockContext
@@ -269,31 +288,6 @@ namespace DaedalusCompiler.Compilation
 
         }
     }
-
-    
-    
-    /*
-    */
-    
-    /*
-     *
-    public enum IfBlockType
-    {
-        If,
-        ElseIf,
-        Else
-    }
-
-    public class AssemblyIfStatement : AssemblyElement
-    {
-        public IfBlock IfBlock;
-        public List<AssemblyElement> ElseBody;
-        public bool HasElseBody;
-        public readonly List<IfBlock> ElseIfBlock;
-        public IfBlockType CurrentBlockType;
-        public List<AssemblyElement> ConditionInstructionStack;
-    }
-     */
 
     
     
