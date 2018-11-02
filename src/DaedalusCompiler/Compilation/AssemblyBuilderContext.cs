@@ -45,7 +45,8 @@ namespace DaedalusCompiler.Compilation
     {
         Function,
         Instance,
-        Prototype
+        Prototype,
+        Shared,
     }
 
     public abstract class BaseExecBlockContext : BlockContext

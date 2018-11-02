@@ -43,7 +43,7 @@ namespace DaedalusCompiler.Compilation
 
         
         private int _nextStringSymbolNumber;
-        public bool IsInsideEvalableStatement;
+        public bool IsInsideConstDef;
         public bool IsCurrentlyParsingExternals;
 
         public bool IsInsideArgList;
@@ -65,7 +65,7 @@ namespace DaedalusCompiler.Compilation
 
             
             _nextStringSymbolNumber = 10000;
-            IsInsideEvalableStatement = false;
+            IsInsideConstDef = false;
             IsCurrentlyParsingExternals = false;
             
             IsInsideArgList = false;
@@ -97,11 +97,6 @@ namespace DaedalusCompiler.Compilation
             return $"{(char) 255}{_nextStringSymbolNumber++}";
         }
 
-        public DatSymbol GetCurrentSymbol()
-        {
-            return ActiveExecBlock.GetSymbol();
-        }
-        
         public bool IsArgListKeyword(string symbolName)
         {
             return symbolName == "nofunc" || symbolName == "null";
@@ -306,9 +301,9 @@ namespace DaedalusCompiler.Compilation
 
         public void SharedBlockStart(List<DatSymbol> symbols)
         {
-            ActiveExecBlock = new SharedExecBlockContext(Symbols);
+            ActiveExecBlock = new SharedExecBlockContext(symbols);
+            _activeContext = ActiveExecBlock;
             ExecBlocks.Add(ActiveExecBlock);
-            _activeContext = new BlockContext(_activeContext);
         }
         
         public void ExecBlockStart(DatSymbol symbol, ExecBlockType blockType)
@@ -351,7 +346,7 @@ namespace DaedalusCompiler.Compilation
             var assignmentInstruction =
                 AssemblyBuilderHelpers.GetInstructionForOperator(assignmentOperator, true, operationType);
 
-            if (!IsInsideEvalableStatement)
+            if (!IsInsideConstDef)
             {
                 AddInstructions(new List<AssemblyElement>(_assignmentLeftSide));   
             }
@@ -598,7 +593,7 @@ namespace DaedalusCompiler.Compilation
         {
             bool isInsideFloatAssignment = IsInsideAssignment && AssignmentType == DatSymbolType.Float;
             bool isInsideFloatArgument = IsInsideArgList && FuncCallCtx.GetParameterType() == DatSymbolType.Float;
-            return IsInsideEvalableStatement || isInsideFloatAssignment || isInsideFloatArgument;
+            return IsInsideConstDef || isInsideFloatAssignment || isInsideFloatArgument;
         }
 
         /*

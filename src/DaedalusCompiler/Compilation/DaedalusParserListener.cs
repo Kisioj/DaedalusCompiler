@@ -21,8 +21,8 @@ namespace DaedalusCompiler.Compilation
 
         public override void ExitParameterList(DaedalusParser.ParameterListContext context)
         {
-            var parametrDeclContexts = context.parameterDecl();
-            foreach (var parameterDeclContext in parametrDeclContexts.Reverse())
+            var parameterDeclContexts = context.parameterDecl();
+            foreach (var parameterDeclContext in parameterDeclContexts.Reverse())
             {
                 BaseExecBlockContext baseExecBlock = _assemblyBuilder.ExecBlocks.Last();
                 string execBlockName = baseExecBlock.GetSymbol().Name;
@@ -101,7 +101,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterConstDef([NotNull] DaedalusParser.ConstDefContext context)
         {
-            _assemblyBuilder.IsInsideEvalableStatement = true;
+            _assemblyBuilder.IsInsideConstDef = true;
             var typeName = context.typeReference().GetText();
             var type = DatSymbolTypeFromString(typeName);
             if (type == DatSymbolType.Func)
@@ -158,7 +158,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void ExitConstDef([NotNull] DaedalusParser.ConstDefContext context)
         {
-            _assemblyBuilder.IsInsideEvalableStatement = false;
+            _assemblyBuilder.IsInsideConstDef = false;
         }
 
         public override void EnterVarDecl([NotNull] DaedalusParser.VarDeclContext context)
@@ -343,22 +343,24 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.AddInstruction(new Ret());
             _assemblyBuilder.ExecBlockEnd();
         }
+        
+        
 
         public override void EnterFunctionDef([NotNull] DaedalusParser.FunctionDefContext context)
         {
-            var name = context.nameNode().GetText();
-            var typeName = context.typeReference().GetText();
-            var type = DatSymbolTypeFromString(typeName);
+            string funcName = context.nameNode().GetText();
+            string returnTypeName = context.typeReference().GetText();
+            DatSymbolType returnType = DatSymbolTypeFromString(returnTypeName);
             uint parametersCount = (uint)context.parameterList().parameterDecl().Length;
 
-            var symbol = SymbolBuilder.BuildFunc(name, parametersCount, type); // TODO : Validate params
+            var symbol = SymbolBuilder.BuildFunc(funcName, parametersCount, returnType);
             _assemblyBuilder.AddSymbol(symbol);
             _assemblyBuilder.ExecBlockStart(symbol, ExecBlockType.Function);
         }
 
         public override void ExitFunctionDef([NotNull] DaedalusParser.FunctionDefContext context)
         {
-            _assemblyBuilder.GetCurrentSymbol().Location = GetLocation(context);
+            _assemblyBuilder.ActiveExecBlock.GetSymbol().Location = GetLocation(context);
             _assemblyBuilder.AddInstruction(new Ret());
             _assemblyBuilder.ExecBlockEnd();
         }
@@ -452,7 +454,7 @@ namespace DaedalusCompiler.Compilation
                 instructions = _assemblyBuilder.GetReferenceAtomInstructions(referenceAtoms);
             }
             
-            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            if (!_assemblyBuilder.IsInsideConstDef)
             {
                 _assemblyBuilder.AddInstructions(instructions);   
             }
@@ -504,7 +506,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterIntegerLiteralValue(DaedalusParser.IntegerLiteralValueContext context)
         {
-            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            if (!_assemblyBuilder.IsInsideConstDef)
             {
                 bool isInsideFloatAssignment = _assemblyBuilder.IsInsideAssignment
                                                && _assemblyBuilder.AssignmentType == DatSymbolType.Float;
@@ -525,7 +527,7 @@ namespace DaedalusCompiler.Compilation
         
         public override void EnterFloatLiteralValue(DaedalusParser.FloatLiteralValueContext context)
         {
-            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            if (!_assemblyBuilder.IsInsideConstDef)
             {
                 int parsedFloat = EvaluatorHelper.EvaluateFloatExpression(context.Parent.Parent.GetText());
                 _assemblyBuilder.AddInstruction(new PushInt(parsedFloat));
@@ -534,7 +536,7 @@ namespace DaedalusCompiler.Compilation
 
         public override void EnterStringLiteralValue(DaedalusParser.StringLiteralValueContext context)
         {
-            if (!_assemblyBuilder.IsInsideEvalableStatement)
+            if (!_assemblyBuilder.IsInsideConstDef)
             {
                 DatSymbolLocation location = GetLocation(context);
                 string value = context.GetText().Replace("\"", "");
