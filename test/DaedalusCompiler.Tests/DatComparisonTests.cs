@@ -326,10 +326,12 @@ namespace DaedalusCompiler.Tests
                 output.WriteLine("0000");
                 Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/", "*", options);
                 output.WriteLine("0001");
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/", "*", options);
-                output.WriteLine("0002");
                 Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/", "STORY/*", options);
+                output.WriteLine("0002");
+                Directory.GetFiles("/temp/", "test/DaedalusCompiler.Tests/Scripts/Content/STORY/*", options);
                 output.WriteLine("0003");
+                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/", "*", options);
+                output.WriteLine("0004");
                 
                 
                 compiler.CompileFromSrc(srcPath, compileToAssembly:false);
