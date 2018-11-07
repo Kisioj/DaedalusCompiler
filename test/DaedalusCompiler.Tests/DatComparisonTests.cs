@@ -281,7 +281,14 @@ namespace DaedalusCompiler.Tests
             
             string runtimeDirPath = Path.Combine(solutionPath, "src", "DaedalusCompiler", "DaedalusBuiltins");
             string outputDirPath = Path.Combine(solutionPath, "test", "DaedalusCompiler.Tests", "output");
-            
+
+
+            output.WriteLine($"currentDirectory: {Directory.GetCurrentDirectory()}");
+            output.WriteLine($"baseDirectory: {baseDirectory}");
+            output.WriteLine($"solutionName: {solutionName}");
+            output.WriteLine($"solutionPath: {solutionPath}");
+            output.WriteLine($"runtimeDirPath: {runtimeDirPath}");
+            output.WriteLine($"outputDirPath: {outputDirPath}");
             
             foreach(KeyValuePair<string, string> entry in _srcPathToDatPath)
             {
