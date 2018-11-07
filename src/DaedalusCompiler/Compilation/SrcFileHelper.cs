@@ -33,7 +33,7 @@ namespace DaedalusCompiler.Compilation
             if (Path.GetExtension(srcFilePath).ToLower() != ".src")
                 throw new Exception($"Invalid SRC file: '{srcFilePath}'.");
             
-            if (alreadyLoadedFiles.Contains(srcFilePath))
+            if (alreadyLoadedFiles.Contains(srcFilePath.ToLower()))
                 throw new Exception($"Cyclic dependency detected. SRC file '{srcFilePath}' is already loaded");
             
             alreadyLoadedFiles.Add(srcFilePath.ToLower());
@@ -60,8 +60,9 @@ namespace DaedalusCompiler.Compilation
                 try
                 {
                     bool containsWildcard = line.Contains("*");
-                    string fullPath = Path.Combine(basePath, line).Trim().ToLower().Replace("\\", "/");
-                    string pathExtension = Path.GetExtension(fullPath).ToLower();
+                    string relativePath = Path.Combine(line.Split("\\").ToArray());
+                    string fullPath = Path.Combine(basePath, relativePath);
+                    string pathExtension = Path.GetExtension(fullPath);
 
                     if (containsWildcard && pathExtension == ".d")
                     {
@@ -86,7 +87,7 @@ namespace DaedalusCompiler.Compilation
 
                         foreach (string filePath in filePaths)
                         {
-                            string filePathLower = filePath.ToLower().Replace("\\", "/");
+                            string filePathLower = filePath.ToLower();
                             if (!alreadyLoadedFiles.Contains(filePathLower))
                             {
                                 alreadyLoadedFiles.Add(filePathLower);
@@ -96,10 +97,11 @@ namespace DaedalusCompiler.Compilation
                     }
                     else if (pathExtension == ".d")
                     {
-                        if (!alreadyLoadedFiles.Contains(fullPath))
+                        string fullPathLowr = fullPath.ToLower();
+                        if (!alreadyLoadedFiles.Contains(fullPathLowr))
                         {
-                            alreadyLoadedFiles.Add(fullPath);
-                            result.Add(fullPath);
+                            alreadyLoadedFiles.Add(fullPathLowr);
+                            result.Add(fullPathLowr);
                         }
                     }
                     else if (pathExtension == ".src")
