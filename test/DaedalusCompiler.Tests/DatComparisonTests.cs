@@ -204,10 +204,10 @@ namespace DaedalusCompiler.Tests
                 DatSymbol expectedSymbol = expectedSymbols[i];
                 DatSymbol symbol = symbols[i];
                 Assert.Equal(expectedSymbol.Index, symbol.Index);
-                if (!NameExceptions.Contains(symbol.Name))
-                {
+                //if (!NameExceptions.Contains(symbol.Name))
+                //{
                     Assert.Equal(expectedSymbol.Name, symbol.Name);
-                }
+                //}
                 Assert.Equal(expectedSymbol.ArrayLength, symbol.ArrayLength);
                 Assert.Equal(expectedSymbol.ParametersCount, symbol.ParametersCount);
                 Assert.Equal(expectedSymbol.Type, symbol.Type);
