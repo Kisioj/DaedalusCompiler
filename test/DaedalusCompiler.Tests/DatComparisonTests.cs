@@ -82,6 +82,8 @@ namespace DaedalusCompiler.Tests
 
         private void DownloadScripts()
         {
+            Console.WriteLine($"_config.SCRIPTS_URL {_config.SCRIPTS_URL}");
+            Console.WriteLine($"_config.Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel) {Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel)}");
             string scriptsUrl = _config.SCRIPTS_URL ?? Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel);
             if (scriptsUrl == null)
             {
