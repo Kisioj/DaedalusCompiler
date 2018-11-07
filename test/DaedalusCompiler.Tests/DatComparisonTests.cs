@@ -323,7 +323,11 @@ namespace DaedalusCompiler.Tests
 
                 
                 EnumerationOptions options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
+                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/", "*", options);
                 output.WriteLine("0000");
+                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/".ToLower(), "*", options);
+                output.WriteLine("0000.5");
+                
                 Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/", "*", options);
                 output.WriteLine("0001");
                 Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/", "STORY/*", options);
