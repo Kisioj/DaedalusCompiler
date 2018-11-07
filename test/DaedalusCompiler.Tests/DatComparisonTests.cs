@@ -275,9 +275,14 @@ namespace DaedalusCompiler.Tests
         public void TestIfCompiledScriptsMatchOriginalDatFiles()
         {
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string solutionName = "DaedalusCompiler";
-            string solutionPath = Path.Combine(baseDirectory.Split(solutionName).First(), solutionName);
+            DirectoryInfo baseDirectoryInfo = new DirectoryInfo(baseDirectory);
+            
+            
+            // string solutionName = "DaedalusCompiler";
+            // string solutionPath = Path.Combine(baseDirectory.Split(solutionName).First(), solutionName);
 
+            string solutionPath = baseDirectoryInfo.Parent?.Parent?.Parent?.Parent?.Parent?.ToString();
+            
             
             string runtimeDirPath = Path.Combine(solutionPath, "src", "DaedalusCompiler", "DaedalusBuiltins");
             string outputDirPath = Path.Combine(solutionPath, "test", "DaedalusCompiler.Tests", "output");
@@ -285,7 +290,7 @@ namespace DaedalusCompiler.Tests
 
             output.WriteLine($"currentDirectory: {Directory.GetCurrentDirectory()}");
             output.WriteLine($"baseDirectory: {baseDirectory}");
-            output.WriteLine($"solutionName: {solutionName}");
+            // output.WriteLine($"solutionName: {solutionName}");
             output.WriteLine($"solutionPath: {solutionPath}");
             output.WriteLine($"runtimeDirPath: {runtimeDirPath}");
             output.WriteLine($"outputDirPath: {outputDirPath}");
