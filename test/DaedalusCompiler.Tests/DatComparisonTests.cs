@@ -62,6 +62,7 @@ namespace DaedalusCompiler.Tests
         {
             LoadJsonConfig();
             DownloadScripts();
+            throw new Exception("fuck");
             ExtractScripts();
             InitializeSrcPathToDatPath();
         }
