@@ -319,6 +319,17 @@ namespace DaedalusCompiler.Tests
                 {
                     output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
                 }
+
+
+                
+                EnumerationOptions options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
+                output.WriteLine("0001");
+                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/", "*", options);
+                output.WriteLine("0002");
+                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/", "STORY/*", options);
+                output.WriteLine("0003");
+                
+                
                 compiler.CompileFromSrc(srcPath, compileToAssembly:false);
 
                 
