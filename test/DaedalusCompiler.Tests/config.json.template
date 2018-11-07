@@ -1,0 +1,11 @@
+{
+  "SRC_PATHS": [
+    "{SOLUTION_PATH}\\Scripts\\Content\\*.src",
+    "{SOLUTION_PATH}\\Scripts\\System\\*.src"
+  ],
+  "DAT_PATHS": [
+    "{SOLUTION_PATH}\\Scripts\\_compiled\\*.dat"
+  ],
+  "SCRIPTS_URL": "",
+  "SCRIPTS_PASSWORD": ""
+}
