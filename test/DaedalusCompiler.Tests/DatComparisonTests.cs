@@ -302,31 +302,24 @@ namespace DaedalusCompiler.Tests
                 string outputDatPath = Path.Combine(outputDirPath, Path.GetFileName(datPath).ToLower());
                 
                 Compiler compiler = new Compiler(runtimeDirPath,  outputDirPath);
-                try
+                if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
                 {
-                    compiler.CompileFromSrc(srcPath, compileToAssembly:false);
+                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries EXISTS");
                 }
-                catch (Exception)
+                else
                 {
-                    if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
-                    {
-                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries EXISTS");
-                    }
-                    else
-                    {
-                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries DOESNT EXIST");
-                    }
+                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries DOESNT EXIST");
+                }
                     
-                    if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries"))
-                    {
-                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries EXISTS");
-                    }
-                    else
-                    {
-                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
-                    }
-                    throw new Exception("fuck");
+                if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries"))
+                {
+                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries EXISTS");
                 }
+                else
+                {
+                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
+                }
+                compiler.CompileFromSrc(srcPath, compileToAssembly:false);
 
                 
                 
