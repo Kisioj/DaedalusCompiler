@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Windows.Forms;
 using DaedalusCompiler.Compilation;
 using DaedalusCompiler.Dat;
 using Newtonsoft.Json;
