@@ -302,7 +302,32 @@ namespace DaedalusCompiler.Tests
                 string outputDatPath = Path.Combine(outputDirPath, Path.GetFileName(datPath).ToLower());
                 
                 Compiler compiler = new Compiler(runtimeDirPath,  outputDirPath);
-                compiler.CompileFromSrc(srcPath, compileToAssembly:false);
+                try
+                {
+                    compiler.CompileFromSrc(srcPath, compileToAssembly:false);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
+                    {
+                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries EXISTS");
+                    }
+                    else
+                    {
+                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries DOESNT EXIST");
+                    }
+                    
+                    if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries"))
+                    {
+                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries EXISTS");
+                    }
+                    else
+                    {
+                        output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
+                    }
+                }
+
+                
                 
                 CompareDats(datPath, outputDatPath);
             }
