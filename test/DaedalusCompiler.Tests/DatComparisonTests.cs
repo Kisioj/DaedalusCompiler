@@ -52,7 +52,7 @@ namespace DaedalusCompiler.Tests
         private Dictionary<string, string> _srcPathToDatPath;
         private Config _config;
 
-        private static HashSet<string> _nameExceptions = new HashSet<string>()
+        private static readonly HashSet<string> NameExceptions = new HashSet<string>()
         {
             "FACE_N_TOUGH_LEE_ÄHNLICH"
         };
@@ -62,7 +62,6 @@ namespace DaedalusCompiler.Tests
         {
             LoadJsonConfig();
             DownloadScripts();
-            throw new Exception("fuck");
             ExtractScripts();
             InitializeSrcPathToDatPath();
         }
@@ -83,9 +82,7 @@ namespace DaedalusCompiler.Tests
 
         private void DownloadScripts()
         {
-            Console.WriteLine($"_config.SCRIPTS_URL {_config.SCRIPTS_URL}");
-            Console.WriteLine($"_config.Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel) {Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel)}");
-            string scriptsUrl = _config.SCRIPTS_URL ?? Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel);
+            string scriptsUrl = _config?.SCRIPTS_URL ?? Environment.GetEnvironmentVariable(Constants.ScriptsUrlLabel);
             if (scriptsUrl == null)
             {
                 return;
@@ -108,7 +105,7 @@ namespace DaedalusCompiler.Tests
                 return;
             }
             
-            string scriptsPassword = _config.SCRIPTS_PASSWORD ?? Environment.GetEnvironmentVariable(Constants.ScriptsPasswordLabel);
+            string scriptsPassword = _config?.SCRIPTS_PASSWORD ?? Environment.GetEnvironmentVariable(Constants.ScriptsPasswordLabel);
             
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             using (ZipFile archive = new ZipFile(scriptsFilePath))
@@ -138,7 +135,7 @@ namespace DaedalusCompiler.Tests
 
         private List<string> GetPaths(string envVarName)
         {
-            List<string> wildcardPaths = _config.GetPaths(envVarName) ?? GetListFromEnvironmentVariable(envVarName);
+            List<string> wildcardPaths = _config?.GetPaths(envVarName) ?? GetListFromEnvironmentVariable(envVarName);
             if (wildcardPaths == null)
             {
                 throw new Exception($"Couldn't load {envVarName}! Please set up proper environment variable or config.json file!");
@@ -207,7 +204,7 @@ namespace DaedalusCompiler.Tests
                 DatSymbol expectedSymbol = expectedSymbols[i];
                 DatSymbol symbol = symbols[i];
                 Assert.Equal(expectedSymbol.Index, symbol.Index);
-                if (!_nameExceptions.Contains(symbol.Name))
+                if (!NameExceptions.Contains(symbol.Name))
                 {
                     Assert.Equal(expectedSymbol.Name, symbol.Name);
                 }
