@@ -92,17 +92,17 @@ namespace DaedalusCompiler.Compilation
                             if (!alreadyLoadedFiles.Contains(filePathLower))
                             {
                                 alreadyLoadedFiles.Add(filePathLower);
-                                result.Add(filePathLower);
+                                result.Add(filePath);
                             }
                         }
                     }
                     else if (pathExtensionLower == ".d")
                     {
-                        string fullPathLowr = fullPath.ToLower();
-                        if (!alreadyLoadedFiles.Contains(fullPathLowr))
+                        string fullPathLower = fullPath.ToLower();
+                        if (!alreadyLoadedFiles.Contains(fullPathLower))
                         {
-                            alreadyLoadedFiles.Add(fullPathLowr);
-                            result.Add(fullPathLowr);
+                            alreadyLoadedFiles.Add(fullPathLower);
+                            result.Add(fullPath);
                         }
                     }
                     else if (pathExtensionLower == ".src")
