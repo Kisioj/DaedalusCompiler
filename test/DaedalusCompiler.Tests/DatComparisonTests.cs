@@ -164,6 +164,7 @@ namespace DaedalusCompiler.Tests
         private List<string> GetListFromEnvironmentVariable(string variableName)
         {
             string variableContent = Environment.GetEnvironmentVariable(variableName);
+            output.WriteLine($"{variableName} = {Environment.GetEnvironmentVariable(variableName)}");
             return variableContent
                 ?.Split(";")
                 .Where(x => !string.IsNullOrEmpty(x))
