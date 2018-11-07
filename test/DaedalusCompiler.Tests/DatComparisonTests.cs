@@ -9,6 +9,7 @@ using DaedalusCompiler.Dat;
 using Newtonsoft.Json;
 using Xunit;
 using Ionic.Zip;
+using Xunit.Abstractions;
 using ZipFile = Ionic.Zip.ZipFile;
 
 namespace DaedalusCompiler.Tests
@@ -48,6 +49,8 @@ namespace DaedalusCompiler.Tests
     
     public class DatComparisonTests
     {
+        private readonly ITestOutputHelper output;
+        
         private string _projectPath;
         private Dictionary<string, string> _srcPathToDatPath;
         private Config _config;
@@ -58,8 +61,10 @@ namespace DaedalusCompiler.Tests
         };
         
 
-        public DatComparisonTests()
+        public DatComparisonTests(ITestOutputHelper output)
         {
+            this.output = output;
+
             LoadJsonConfig();
             DownloadScripts();
             ExtractScripts();
@@ -94,6 +99,7 @@ namespace DaedalusCompiler.Tests
             using (WebClient client = new WebClient())
             {
                 client.DownloadFile(scriptsUrl, scriptsFilePath);
+                output.WriteLine($"Downloaded {Constants.ScriptsFileName}.");
             }
         }
 
@@ -112,6 +118,7 @@ namespace DaedalusCompiler.Tests
             {
                 archive.Password = scriptsPassword ;
                 archive.ExtractAll(_projectPath, ExtractExistingFileAction.OverwriteSilently);
+                output.WriteLine($"Extracted {Constants.ScriptsFileName}.");
             }
         }
 
@@ -131,6 +138,10 @@ namespace DaedalusCompiler.Tests
                 string datPath = filenameToDatPath[filename];
                 _srcPathToDatPath[srcPath] = datPath;
             }
+            
+            output.WriteLine($"srcPaths.Count {srcPaths.Count}.");
+            output.WriteLine($"datPaths.Count {datPaths.Count}.");
+            output.WriteLine($"_srcPathToDatPath.Count {_srcPathToDatPath.Count}.");
         }
 
         private List<string> GetPaths(string envVarName)
@@ -204,10 +215,10 @@ namespace DaedalusCompiler.Tests
                 DatSymbol expectedSymbol = expectedSymbols[i];
                 DatSymbol symbol = symbols[i];
                 Assert.Equal(expectedSymbol.Index, symbol.Index);
-                //if (!NameExceptions.Contains(symbol.Name))
-                //{
+                if (!NameExceptions.Contains(symbol.Name))
+                {
                     Assert.Equal(expectedSymbol.Name, symbol.Name);
-                //}
+                }
                 Assert.Equal(expectedSymbol.ArrayLength, symbol.ArrayLength);
                 Assert.Equal(expectedSymbol.ParametersCount, symbol.ParametersCount);
                 Assert.Equal(expectedSymbol.Type, symbol.Type);
@@ -229,10 +240,10 @@ namespace DaedalusCompiler.Tests
                 bool isBuggedParentIndex = lastParentIndex == expectedSymbol.ParentIndex && isParentLessType;
                                            
                 
-                //if (!isBuggedParentIndex)
-                //{
+                if (!isBuggedParentIndex)
+                {
                     Assert.Equal(expectedSymbol.ParentIndex, symbol.ParentIndex);
-                //}
+                }
 
                 if (!isParentLessType)
                 {
