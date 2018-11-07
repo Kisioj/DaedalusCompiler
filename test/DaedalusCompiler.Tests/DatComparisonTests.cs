@@ -118,7 +118,7 @@ namespace DaedalusCompiler.Tests
             {
                 archive.Password = scriptsPassword ;
                 archive.ExtractAll(_projectPath, ExtractExistingFileAction.OverwriteSilently);
-                output.WriteLine($"Extracted {Constants.ScriptsFileName}.");
+                output.WriteLine($"Extracted {Constants.ScriptsFileName} into {_projectPath}.");
             }
         }
 
@@ -147,6 +147,10 @@ namespace DaedalusCompiler.Tests
         private List<string> GetPaths(string envVarName)
         {
             List<string> wildcardPaths = _config?.GetPaths(envVarName) ?? GetListFromEnvironmentVariable(envVarName);
+            
+            output.WriteLine($"envVarName {envVarName} | _config?.GetPaths(envVarName) {_config?.GetPaths(envVarName)} | GetListFromEnvironmentVariable(envVarName) {GetListFromEnvironmentVariable(envVarName)}");
+            
+            
             if (wildcardPaths == null)
             {
                 throw new Exception($"Couldn't load {envVarName}! Please set up proper environment variable or config.json file!");
