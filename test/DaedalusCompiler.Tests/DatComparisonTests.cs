@@ -306,7 +306,7 @@ namespace DaedalusCompiler.Tests
                 {
                     compiler.CompileFromSrc(srcPath, compileToAssembly:false);
                 }
-                catch (DirectoryNotFoundException)
+                catch (Exception)
                 {
                     if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
                     {
@@ -325,6 +325,7 @@ namespace DaedalusCompiler.Tests
                     {
                         output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
                     }
+                    throw new Exception("fuck");
                 }
 
                 
