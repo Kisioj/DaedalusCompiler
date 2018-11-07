@@ -229,10 +229,10 @@ namespace DaedalusCompiler.Tests
                 bool isBuggedParentIndex = lastParentIndex == expectedSymbol.ParentIndex && isParentLessType;
                                            
                 
-                if (!isBuggedParentIndex)
-                {
+                //if (!isBuggedParentIndex)
+                //{
                     Assert.Equal(expectedSymbol.ParentIndex, symbol.ParentIndex);
-                }
+                //}
 
                 if (!isParentLessType)
                 {
