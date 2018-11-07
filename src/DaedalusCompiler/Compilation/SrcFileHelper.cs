@@ -62,9 +62,9 @@ namespace DaedalusCompiler.Compilation
                     bool containsWildcard = line.Contains("*");
                     string relativePath = Path.Combine(line.Split("\\").ToArray());
                     string fullPath = Path.Combine(basePath, relativePath);
-                    string pathExtension = Path.GetExtension(fullPath);
+                    string pathExtensionLower = Path.GetExtension(fullPath).ToLower();
 
-                    if (containsWildcard && pathExtension == ".d")
+                    if (containsWildcard && pathExtensionLower == ".d")
                     {
                         string dirPath = Path.GetDirectoryName(fullPath);
                         string filenamePattern = Path.GetFileName(fullPath);
@@ -95,7 +95,7 @@ namespace DaedalusCompiler.Compilation
                             }
                         }
                     }
-                    else if (pathExtension == ".d")
+                    else if (pathExtensionLower == ".d")
                     {
                         string fullPathLowr = fullPath.ToLower();
                         if (!alreadyLoadedFiles.Contains(fullPathLowr))
@@ -104,7 +104,7 @@ namespace DaedalusCompiler.Compilation
                             result.Add(fullPathLowr);
                         }
                     }
-                    else if (pathExtension == ".src")
+                    else if (pathExtensionLower == ".src")
                     {
                         result.AddRange(LoadScriptsFilePaths(fullPath, alreadyLoadedFiles));
                     }
