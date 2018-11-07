@@ -289,6 +289,8 @@ namespace DaedalusCompiler.Tests
                 
                 CompareDats(datPath, outputDatPath);
             }
+            
+            Assert.Equal(0, 1);
         }
     }
 }
