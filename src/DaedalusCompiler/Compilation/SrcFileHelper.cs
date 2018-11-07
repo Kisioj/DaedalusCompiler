@@ -56,12 +56,12 @@ namespace DaedalusCompiler.Compilation
         {
             List<string> result = new List<string>();
 
-            foreach (string line in srcLines.Where(x => String.IsNullOrWhiteSpace(x) == false).Select(item => item.Replace("\\", "/")))
+            foreach (string line in srcLines.Where(x => String.IsNullOrWhiteSpace(x) == false).Select(item => Path.Combine(item.Trim().Split("\\").ToArray())))
             {
                 try
                 {
                     bool containsWildcard = line.Contains("*");
-                    string relativePath = Path.Combine(line.Split("\\").ToArray());
+                    string relativePath = line; //Path.Combine(line.Split("\\").ToArray());
                     string fullPath = Path.Combine(basePath, relativePath);
                     string pathExtensionLower = Path.GetExtension(fullPath).ToLower();
 
@@ -70,10 +70,9 @@ namespace DaedalusCompiler.Compilation
                         string dirPath = Path.GetDirectoryName(fullPath);
                         string filenamePattern = Path.GetFileName(fullPath);
 
-                        List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, new EnumerationOptions
-                        {
-                            MatchCasing = MatchCasing.CaseInsensitive
-                        }).ToList();
+
+                        EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
+                        List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, options).ToList();
                         
                         // we make custom sort to achieve same sort results independent from OS 
                         filePaths.Sort((a, b) =>

@@ -302,6 +302,8 @@ namespace DaedalusCompiler.Tests
                 string outputDatPath = Path.Combine(outputDirPath, Path.GetFileName(datPath).ToLower());
                 
                 Compiler compiler = new Compiler(runtimeDirPath,  outputDirPath);
+                
+                /*
                 if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
                 {
                     output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries EXISTS");
@@ -336,7 +338,7 @@ namespace DaedalusCompiler.Tests
                 output.WriteLine("0003");
                 Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/", "*", options);
                 output.WriteLine("0004");
-                
+                */
                 
                 compiler.CompileFromSrc(srcPath, compileToAssembly:false);
 
