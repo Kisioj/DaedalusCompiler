@@ -101,7 +101,7 @@ namespace DaedalusCompiler.Compilation
                     {
                         
                         EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
-                        List<string> filePaths = Directory.GetFiles(basePath, relativePath, options).ToList();
+                        List<string> filePaths = Directory.GetFiles(basePath, relativePath + "*", options).ToList();
                         if (filePaths.Count != 1)
                         {
                             throw new Exception($"Unambigous path: {fullPath}. Possible paths: {string.Join(";", filePaths)}");
