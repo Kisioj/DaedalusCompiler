@@ -28,8 +28,8 @@ namespace DaedalusCompiler.Tests
     
     public class Config
     {
-        public List<string> SRC_PATHS;
-        public List<string> DAT_PATHS;
+        private List<string> SRC_PATHS;
+        private List<string> DAT_PATHS;
         public string SCRIPTS_URL;
         public string SCRIPTS_PASSWORD;
 
@@ -49,7 +49,7 @@ namespace DaedalusCompiler.Tests
     
     public class DatComparisonTests
     {
-        private readonly ITestOutputHelper output;
+        private readonly ITestOutputHelper _output;
         
         private string _projectPath;
         private Dictionary<string, string> _srcPathToDatPath;
@@ -63,7 +63,7 @@ namespace DaedalusCompiler.Tests
 
         public DatComparisonTests(ITestOutputHelper output)
         {
-            this.output = output;
+            _output = output;
 
             LoadJsonConfig();
             DownloadScripts();
@@ -99,7 +99,7 @@ namespace DaedalusCompiler.Tests
             using (WebClient client = new WebClient())
             {
                 client.DownloadFile(scriptsUrl, scriptsFilePath);
-                output.WriteLine($"Downloaded {Constants.ScriptsFileName}.");
+                _output.WriteLine($"Downloaded {Constants.ScriptsFileName}.");
             }
         }
 
@@ -118,7 +118,7 @@ namespace DaedalusCompiler.Tests
             {
                 archive.Password = scriptsPassword ;
                 archive.ExtractAll(_projectPath, ExtractExistingFileAction.OverwriteSilently);
-                output.WriteLine($"Extracted {Constants.ScriptsFileName} into {_projectPath}.");
+                _output.WriteLine($"Extracted {Constants.ScriptsFileName} into {_projectPath}.");
             }
         }
 
@@ -138,18 +138,11 @@ namespace DaedalusCompiler.Tests
                 string datPath = filenameToDatPath[filename];
                 _srcPathToDatPath[srcPath] = datPath;
             }
-            
-            output.WriteLine($"srcPaths.Count {srcPaths.Count}.");
-            output.WriteLine($"datPaths.Count {datPaths.Count}.");
-            output.WriteLine($"_srcPathToDatPath.Count {_srcPathToDatPath.Count}.");
         }
 
         private List<string> GetPaths(string envVarName)
         {
             List<string> wildcardPaths = _config?.GetPaths(envVarName) ?? GetListFromEnvironmentVariable(envVarName);
-            
-            output.WriteLine($"envVarName {envVarName} | _config?.GetPaths(envVarName) {_config?.GetPaths(envVarName)} | GetListFromEnvironmentVariable(envVarName) {GetListFromEnvironmentVariable(envVarName)}");
-            
             
             if (wildcardPaths == null)
             {
@@ -164,7 +157,7 @@ namespace DaedalusCompiler.Tests
         private List<string> GetListFromEnvironmentVariable(string variableName)
         {
             string variableContent = Environment.GetEnvironmentVariable(variableName);
-            output.WriteLine($"{variableName} = {Environment.GetEnvironmentVariable(variableName)}");
+            _output.WriteLine($"{variableName} = {Environment.GetEnvironmentVariable(variableName)}");
             return variableContent
                 ?.Split(";")
                 .Where(x => !string.IsNullOrEmpty(x))
@@ -276,24 +269,11 @@ namespace DaedalusCompiler.Tests
         {
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             DirectoryInfo baseDirectoryInfo = new DirectoryInfo(baseDirectory);
-            
-            
-            // string solutionName = "DaedalusCompiler";
-            // string solutionPath = Path.Combine(baseDirectory.Split(solutionName).First(), solutionName);
-
             string solutionPath = baseDirectoryInfo.Parent?.Parent?.Parent?.Parent?.Parent?.ToString();
             
             
             string runtimeDirPath = Path.Combine(solutionPath, "src", "DaedalusCompiler", "DaedalusBuiltins");
             string outputDirPath = Path.Combine(solutionPath, "test", "DaedalusCompiler.Tests", "output");
-
-
-            output.WriteLine($"currentDirectory: {Directory.GetCurrentDirectory()}");
-            output.WriteLine($"baseDirectory: {baseDirectory}");
-            // output.WriteLine($"solutionName: {solutionName}");
-            output.WriteLine($"solutionPath: {solutionPath}");
-            output.WriteLine($"runtimeDirPath: {runtimeDirPath}");
-            output.WriteLine($"outputDirPath: {outputDirPath}");
             
             foreach(KeyValuePair<string, string> entry in _srcPathToDatPath)
             {
@@ -302,52 +282,10 @@ namespace DaedalusCompiler.Tests
                 string outputDatPath = Path.Combine(outputDirPath, Path.GetFileName(datPath).ToLower());
                 
                 Compiler compiler = new Compiler(runtimeDirPath,  outputDirPath);
-                
-                /*
-                if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries"))
-                {
-                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries EXISTS");
-                }
-                else
-                {
-                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/Log_Entries DOESNT EXIST");
-                }
-                    
-                if (Directory.Exists("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries"))
-                {
-                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries EXISTS");
-                }
-                else
-                {
-                    output.WriteLine("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/Log_Entries DOESNT EXIST");
-                }
-
-
-                
-                EnumerationOptions options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/", "*", options);
-                output.WriteLine("0000");
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/".ToLower(), "*", options);
-                output.WriteLine("0000.5");
-                
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/Story/", "*", options);
-                output.WriteLine("0001");
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/", "STORY/*", options);
-                output.WriteLine("0002");
-                Directory.GetFiles("/temp/", "test/DaedalusCompiler.Tests/Scripts/Content/STORY/*", options);
-                output.WriteLine("0003");
-                Directory.GetFiles("/temp/test/DaedalusCompiler.Tests/Scripts/Content/STORY/", "*", options);
-                output.WriteLine("0004");
-                */
-                
                 compiler.CompileFromSrc(srcPath, compileToAssembly:false);
-
-                
                 
                 CompareDats(datPath, outputDatPath);
             }
-            
-            Assert.Equal(0, 1);
         }
     }
 }

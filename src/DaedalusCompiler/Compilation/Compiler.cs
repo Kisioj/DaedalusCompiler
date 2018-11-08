@@ -39,20 +39,16 @@ namespace DaedalusCompiler.Compilation
                     assemblyBuilder.IsCurrentlyParsingExternals = false;
                 }
 
-                using (StreamWriter file = new StreamWriter("compiled.txt"))
+                for (int i = 0; i < paths.Length; i++)
                 {
-                    for (int i = 0; i < paths.Length; i++)
-                    {
-                        Console.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
-                        file.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
-    
-                        // create parser for specific file
-                        var parser = GetParser(paths[i]);
-    
-                        ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, i), parser.daedalusFile());
-                    }
+                    Console.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
+
+                    // create parser for specific file
+                    var parser = GetParser(paths[i]);
+
+                    ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, i), parser.daedalusFile());
                 }
-        
+
                 assemblyBuilder.Finish();
                 if (compileToAssembly)
                 {

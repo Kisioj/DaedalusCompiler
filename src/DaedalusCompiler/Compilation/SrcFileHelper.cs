@@ -77,9 +77,6 @@ namespace DaedalusCompiler.Compilation
 
                 resultPath = Path.Combine(resultPath, directories.First());
             }
-
-            // resultPath = Path.Combine(resultPath, relativePathSplitted[lastIndex]);
-
             return resultPath;
         }
 
@@ -116,13 +113,10 @@ namespace DaedalusCompiler.Compilation
                 try
                 {
                     bool containsWildcard = line.Contains("*");
-                    string relativePath = line; //Path.Combine(line.Split("\\").ToArray());
-                    //string fullPath = Path.Combine(basePath, relativePath);
-
+                    string relativePath = line;
                     string dirPath = GetDirPathInsensitive(basePath, relativePath);
                     string filenamePattern = Path.GetFileName(relativePath);
                     string pathExtensionLower = Path.GetExtension(filenamePattern).ToLower();
-                    
                     
                     if (containsWildcard && pathExtensionLower == ".d")
                     {   
