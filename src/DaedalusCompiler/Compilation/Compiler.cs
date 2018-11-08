@@ -27,27 +27,32 @@ namespace DaedalusCompiler.Compilation
                 string srcFileName = Path.GetFileNameWithoutExtension(srcFilePath).ToLower();
                 
                 string runtimePath = Path.Combine(_runtimeDirPath, srcFileName + ".d");
-                
+
                 if (File.Exists(runtimePath))
                 {
                     assemblyBuilder.IsCurrentlyParsingExternals = true;
                     Console.WriteLine($"[0/{paths.Length}]Compiling runtime: {runtimePath}");
+                    
+                
                     var parser = GetParser(runtimePath);
                     ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, 0), parser.daedalusFile());
                     assemblyBuilder.IsCurrentlyParsingExternals = false;
                 }
-                
-                
-                for (int i = 0; i < paths.Length; i++)
+
+                using (StreamWriter file = new StreamWriter("compiled.txt"))
                 {
-                    Console.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
-
-                    // create parser for specific file
-                    var parser = GetParser(paths[i]);
-
-                    ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, i), parser.daedalusFile());
-                }
+                    for (int i = 0; i < paths.Length; i++)
+                    {
+                        Console.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
+                        file.WriteLine($"[{i + 1}/{paths.Length}]Compiling: {paths[i]}");
     
+                        // create parser for specific file
+                        var parser = GetParser(paths[i]);
+    
+                        ParseTreeWalker.Default.Walk(new DaedalusParserListener(assemblyBuilder, i), parser.daedalusFile());
+                    }
+                }
+        
                 assemblyBuilder.Finish();
                 if (compileToAssembly)
                 {

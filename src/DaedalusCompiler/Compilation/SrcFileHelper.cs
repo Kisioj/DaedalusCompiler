@@ -72,7 +72,9 @@ namespace DaedalusCompiler.Compilation
 
 
                         EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
-                        List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, options).ToList();
+                        // List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, options).ToList();
+                        
+                        List<string> filePaths = Directory.GetFiles(basePath, relativePath, options).ToList();
                         
                         // we make custom sort to achieve same sort results independent from OS 
                         filePaths.Sort((a, b) =>
