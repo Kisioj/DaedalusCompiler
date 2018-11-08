@@ -99,6 +99,16 @@ namespace DaedalusCompiler.Compilation
                     }
                     else if (pathExtensionLower == ".d")
                     {
+                        
+                        EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
+                        List<string> filePaths = Directory.GetFiles(basePath, relativePath, options).ToList();
+                        if (filePaths.Count != 1)
+                        {
+                            throw new Exception($"Unambigous path: {fullPath}. Possible paths: {string.Join(";", filePaths)}");
+                        }
+
+                        fullPath = filePaths.First();
+                        
                         string fullPathLower = fullPath.ToLower();
                         if (!alreadyLoadedFiles.Contains(fullPathLower))
                         {
