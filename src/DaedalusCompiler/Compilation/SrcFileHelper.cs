@@ -52,6 +52,61 @@ namespace DaedalusCompiler.Compilation
             }
         }
 
+
+        private static string GetDirPathInsensitive(string basePath, string relativePath)
+        {
+            string resultPath = basePath;
+            
+            EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
+            string[] relativePathSplitted = relativePath.Split(Path.DirectorySeparatorChar);
+            int lastIndex = relativePathSplitted.Length - 1;
+            
+            for (int i = 0; i < lastIndex; i++)
+            {
+                string relativePathPart = relativePathSplitted[i];
+                string[] directories = Directory.GetDirectories(resultPath, relativePathPart, options);
+                if (directories.Length == 0)
+                {
+                    throw new DirectoryNotFoundException($"ERROR: Could not find a part of the path '{Path.Combine(resultPath, relativePathPart)}'");
+                }
+
+                if (directories.Length > 1)
+                {
+                    throw new DirectoryNotFoundException($"ERROR: Unambigous path '{Path.Combine(resultPath, relativePathPart)}'. Matches {String.Join(";", directories)}");;
+                }
+
+                resultPath = Path.Combine(resultPath, directories.First());
+            }
+
+            // resultPath = Path.Combine(resultPath, relativePathSplitted[lastIndex]);
+
+            return resultPath;
+        }
+
+        private static List<string> GetFilesInsensitive(string dirPath, string filenamePattern)
+        {
+            EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
+            List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, options).ToList();
+            if (filePaths.Count == 0)
+            {
+                throw new FileNotFoundException($"ERROR: Could not find any files in '{dirPath}' that matches pattern '{filenamePattern}'");
+            }
+
+            return filePaths;
+        }
+
+        private static string GetFileInsensitive(string dirPath, string filenamePattern)
+        {
+            List<string> filePaths = GetFilesInsensitive(dirPath, filenamePattern);
+            if (filePaths.Count > 1)
+            {
+                throw new DirectoryNotFoundException($"ERROR: Unambigous path '{Path.Combine(dirPath, filenamePattern)}'. Matches {String.Join(";", filePaths)}");;
+            }
+
+            return filePaths.First();
+        }
+        
+        
         private static IEnumerable<string> LoadScriptsFilePaths(string basePath, string[] srcLines, HashSet<string> alreadyLoadedFiles)
         {
             List<string> result = new List<string>();
@@ -62,19 +117,16 @@ namespace DaedalusCompiler.Compilation
                 {
                     bool containsWildcard = line.Contains("*");
                     string relativePath = line; //Path.Combine(line.Split("\\").ToArray());
-                    string fullPath = Path.Combine(basePath, relativePath);
-                    string pathExtensionLower = Path.GetExtension(fullPath).ToLower();
+                    //string fullPath = Path.Combine(basePath, relativePath);
 
+                    string dirPath = GetDirPathInsensitive(basePath, relativePath);
+                    string filenamePattern = Path.GetFileName(relativePath);
+                    string pathExtensionLower = Path.GetExtension(filenamePattern).ToLower();
+                    
+                    
                     if (containsWildcard && pathExtensionLower == ".d")
-                    {
-                        string dirPath = Path.GetDirectoryName(fullPath);
-                        string filenamePattern = Path.GetFileName(fullPath);
-
-
-                        EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
-                        // List<string> filePaths = Directory.GetFiles(dirPath, filenamePattern, options).ToList();
-                        
-                        List<string> filePaths = Directory.GetFiles(basePath, relativePath, options).ToList();
+                    {   
+                        List<string> filePaths = GetFilesInsensitive(dirPath, filenamePattern);
                         
                         // we make custom sort to achieve same sort results independent from OS 
                         filePaths.Sort((a, b) =>
@@ -99,15 +151,7 @@ namespace DaedalusCompiler.Compilation
                     }
                     else if (pathExtensionLower == ".d")
                     {
-                        
-                        EnumerationOptions options = new EnumerationOptions {MatchCasing = MatchCasing.CaseInsensitive};
-                        List<string> filePaths = Directory.GetFiles(basePath, relativePath + "*", options).ToList();
-                        if (filePaths.Count != 1)
-                        {
-                            throw new Exception($"Unambigous path: {fullPath}. Possible paths: {string.Join(";", filePaths)}");
-                        }
-
-                        fullPath = filePaths.First();
+                        string fullPath = GetFileInsensitive(dirPath, filenamePattern);
                         
                         string fullPathLower = fullPath.ToLower();
                         if (!alreadyLoadedFiles.Contains(fullPathLower))
@@ -118,6 +162,8 @@ namespace DaedalusCompiler.Compilation
                     }
                     else if (pathExtensionLower == ".src")
                     {
+                        string fullPath = GetFileInsensitive(dirPath, filenamePattern);
+                        
                         result.AddRange(LoadScriptsFilePaths(fullPath, alreadyLoadedFiles));
                     }
                     else
