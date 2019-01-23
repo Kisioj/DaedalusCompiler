@@ -110,6 +110,7 @@ namespace DaedalusCompiler.Compilation
                 }
                 else
                 {
+                    Console.WriteLine($"Compiler.cs: _outputDirPath: {_outputDirPath}");
                     Directory.CreateDirectory(_outputDirPath);
                     string datPath = Path.Combine(_outputDirPath, srcFileName + ".dat");
                     _assemblyBuilder.SaveToDat(datPath);
