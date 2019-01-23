@@ -314,6 +314,7 @@ namespace DaedalusCompiler.Tests
                     compiler.SetCompilationUserName("kisio");
                 }
                 bool compiled = compiler.CompileFromSrc(srcPath, compileToAssembly:false, verbose:false, generateOutputUnits: generateOutputUnits);
+                _output.WriteLine($"srcPath: {srcPath}");
                 _output.WriteLine($"compiled: {compiled}");
                 _output.WriteLine($"datPath: {datPath}");
                 _output.WriteLine($"outputDatPath: {outputDatPath}");
