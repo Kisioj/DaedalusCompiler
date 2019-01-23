@@ -313,7 +313,7 @@ namespace DaedalusCompiler.Tests
                     compiler.SetCompilationDateTimeText("13.11.2018 15:30:55");
                     compiler.SetCompilationUserName("kisio");
                 }
-                bool compiled = compiler.CompileFromSrc(srcPath, compileToAssembly:false, verbose:false, generateOutputUnits: generateOutputUnits);
+                bool compiled = compiler.CompileFromSrc(srcPath, compileToAssembly:false, verbose:true, generateOutputUnits: generateOutputUnits);
                 _output.WriteLine($"srcPath: {srcPath}");
                 _output.WriteLine($"compiled: {compiled}");
                 _output.WriteLine($"datPath: {datPath}");
