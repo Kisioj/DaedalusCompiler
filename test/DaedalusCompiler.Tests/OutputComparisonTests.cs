@@ -122,7 +122,7 @@ namespace DaedalusCompiler.Tests
             {
                 archive.Password = scriptsPassword ;
                 archive.ExtractAll(_projectPath, ExtractExistingFileAction.OverwriteSilently);
-                _output.WriteLine($"Extracted {Constants.ScriptsFileName} into {_projectPath}.");
+                _output.WriteLine($"Extracted {Constants.ScriptsFileName} into {_projectPath}");
             }
         }
 
@@ -161,7 +161,7 @@ namespace DaedalusCompiler.Tests
         private List<string> GetListFromEnvironmentVariable(string variableName)
         {
             string variableContent = Environment.GetEnvironmentVariable(variableName);
-            _output.WriteLine($"{variableName} = {Environment.GetEnvironmentVariable(variableName)}");
+            _output.WriteLine($"ENV VAR: {variableName} = {Environment.GetEnvironmentVariable(variableName)}");
             return variableContent
                 ?.Split(";")
                 .Where(x => !string.IsNullOrEmpty(x))
@@ -295,6 +295,10 @@ namespace DaedalusCompiler.Tests
             
             string outputDirPath = Path.Combine(solutionPath, "test", "DaedalusCompiler.Tests", "output");
             
+            _output.WriteLine($"baseDirectory: {baseDirectory}");
+            _output.WriteLine($"solutionPath: {solutionPath}");
+            _output.WriteLine($"outputDirPath: {outputDirPath}");
+            
             foreach(KeyValuePair<string, string> entry in _srcPathToDatPath)
             {
                 string srcPath = entry.Key;
@@ -309,7 +313,10 @@ namespace DaedalusCompiler.Tests
                     compiler.SetCompilationDateTimeText("13.11.2018 15:30:55");
                     compiler.SetCompilationUserName("kisio");
                 }
-                compiler.CompileFromSrc(srcPath, compileToAssembly:false, verbose:false, generateOutputUnits: generateOutputUnits);              
+                bool compiled = compiler.CompileFromSrc(srcPath, compileToAssembly:false, verbose:false, generateOutputUnits: generateOutputUnits);
+                _output.WriteLine($"compiled: {compiled}");
+                _output.WriteLine($"datPath: {datPath}");
+                _output.WriteLine($"outputDatPath: {outputDatPath}");
                 CompareDats(datPath, outputDatPath);
             }
 
