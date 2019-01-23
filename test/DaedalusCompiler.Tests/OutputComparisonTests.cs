@@ -317,6 +317,33 @@ namespace DaedalusCompiler.Tests
                 _output.WriteLine($"srcPath: {srcPath}");
                 _output.WriteLine($"compiled: {compiled}");
                 _output.WriteLine($"datPath: {datPath}");
+                
+                if (compiler._assemblyBuilder.Errors.Any())
+                {
+                    _output.WriteLine("ERRORS");
+                    compiler._assemblyBuilder.Errors.Sort((x, y) => x.CompareTo(y));
+
+                    string lastErrorFilePath = "";
+                    string lastErrorBlockName = "";
+                    foreach (CompilationMessage error in compiler._assemblyBuilder.Errors)
+                    {
+                        if (lastErrorFilePath != error.FilePath)
+                        {
+                            lastErrorFilePath = error.FilePath;
+                            _output.WriteLine(error.FilePath);
+                        }
+
+                        if (lastErrorBlockName != error.ExecBlockName)
+                        {
+                            lastErrorBlockName = error.ExecBlockName;
+                            _output.WriteLine($"{error.FileName}: In {error.ExecBlockType} ‘{error.ExecBlockName}’:");
+                        }
+
+                        error.Print();
+                    }
+
+                }
+                    
                 _output.WriteLine($"outputDatPath: {outputDatPath}");
                 CompareDats(datPath, outputDatPath);
             }

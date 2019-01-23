@@ -12,7 +12,7 @@ namespace DaedalusCompiler.Compilation
     public class Compiler
     {
 
-        private readonly AssemblyBuilder _assemblyBuilder;
+        public readonly AssemblyBuilder _assemblyBuilder;
         private readonly OutputUnitsBuilder _ouBuilder;
         private readonly string _outputDirPath;
         
