@@ -143,17 +143,17 @@ public partial class DaedalusBaseListener : IDaedalusListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitInstanceDecl([NotNull] DaedalusParser.InstanceDeclContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="DaedalusParser.varDecl"/>.
+	/// Enter a parse tree produced by <see cref="DaedalusParser.varDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterVarDecl([NotNull] DaedalusParser.VarDeclContext context) { }
+	public virtual void EnterVarDef([NotNull] DaedalusParser.VarDefContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="DaedalusParser.varDecl"/>.
+	/// Exit a parse tree produced by <see cref="DaedalusParser.varDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitVarDecl([NotNull] DaedalusParser.VarDeclContext context) { }
+	public virtual void ExitVarDef([NotNull] DaedalusParser.VarDefContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="DaedalusParser.constArrayDef"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -203,29 +203,29 @@ public partial class DaedalusBaseListener : IDaedalusListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitConstValueAssignment([NotNull] DaedalusParser.ConstValueAssignmentContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="DaedalusParser.varArrayDecl"/>.
+	/// Enter a parse tree produced by <see cref="DaedalusParser.varArrayDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterVarArrayDecl([NotNull] DaedalusParser.VarArrayDeclContext context) { }
+	public virtual void EnterVarArrayDef([NotNull] DaedalusParser.VarArrayDefContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="DaedalusParser.varArrayDecl"/>.
+	/// Exit a parse tree produced by <see cref="DaedalusParser.varArrayDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitVarArrayDecl([NotNull] DaedalusParser.VarArrayDeclContext context) { }
+	public virtual void ExitVarArrayDef([NotNull] DaedalusParser.VarArrayDefContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="DaedalusParser.varValueDecl"/>.
+	/// Enter a parse tree produced by <see cref="DaedalusParser.varValueDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterVarValueDecl([NotNull] DaedalusParser.VarValueDeclContext context) { }
+	public virtual void EnterVarValueDef([NotNull] DaedalusParser.VarValueDefContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="DaedalusParser.varValueDecl"/>.
+	/// Exit a parse tree produced by <see cref="DaedalusParser.varValueDef"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitVarValueDecl([NotNull] DaedalusParser.VarValueDeclContext context) { }
+	public virtual void ExitVarValueDef([NotNull] DaedalusParser.VarValueDefContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="DaedalusParser.parameterList"/>.
 	/// <para>The default implementation does nothing.</para>

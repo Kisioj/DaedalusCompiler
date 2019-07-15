@@ -229,8 +229,34 @@ namespace DaedalusCompiler.Compilation
             _assemblyBuilder.IsInsideConstDef = false;
         }
 
-        public override void EnterVarDecl([NotNull] DaedalusParser.VarDeclContext context)
+        
+        /*
+         public override void EnterAssignment(DaedalusParser.AssignmentContext context)
         {
+            var referenceContext = context.reference();
+            DatSymbolReference reference = _assemblyBuilder.GetDatSymbolReference(referenceContext);
+            List<AssemblyElement> instructions = _assemblyBuilder.GetDatSymbolReferenceInstructions(reference);
+            _assemblyBuilder.AssignmentStart(Array.ConvertAll(instructions.ToArray(), item => (SymbolInstruction) item));
+            _assemblyBuilder.IsInsideAssignment = true;
+            _assemblyBuilder.AssignmentType = reference.GetSymbolType();
+        }
+
+
+        public override void ExitAssignment(DaedalusParser.AssignmentContext context)
+        {
+            _assemblyBuilder.IsInsideAssignment = false;
+            
+            string assignmentOperator = context.assignmentOperator().GetText();
+
+            _assemblyBuilder.AssignmentEnd(assignmentOperator);
+        }
+         */
+        
+        
+        public override void EnterVarDef([NotNull] DaedalusParser.VarDefContext context)
+        {
+            _assemblyBuilder.IsInsideAssignment = false;
+            
             if (context.Parent.Parent is DaedalusParser.DaedalusFileContext || _assemblyBuilder.IsContextInsideExecBlock())
             {
                 var typeName = context.typeReference().GetText();
@@ -247,7 +273,7 @@ namespace DaedalusCompiler.Compilation
                     if (varContext is TerminalNodeImpl)
                         continue; // skips ',' 
 
-                    if (varContext is DaedalusParser.VarValueDeclContext varValueContext)
+                    if (varContext is DaedalusParser.VarValueDefContext varValueContext)
                     {
                         var name = varValueContext.nameNode().GetText();
                         if (_assemblyBuilder.IsContextInsideExecBlock())
@@ -270,9 +296,15 @@ namespace DaedalusCompiler.Compilation
 
                         DatSymbol symbol = SymbolBuilder.BuildVariable(name, type, location, parentIndex);
                         _assemblyBuilder.AddSymbol(symbol, varValueContext.nameNode());
+                        
+                        var constValueAssignmentContext = varValueContext.constValueAssignment();
+                        if (constValueAssignmentContext != null)
+                        {
+                            Console.WriteLine("hah");
+                        }
                     }
 
-                    if (varContext is DaedalusParser.VarArrayDeclContext varArrayContext)
+                    if (varContext is DaedalusParser.VarArrayDefContext varArrayContext)
                     {
                         var name = varArrayContext.nameNode().GetText();
                         if (_assemblyBuilder.IsContextInsideExecBlock())
@@ -309,19 +341,19 @@ namespace DaedalusCompiler.Compilation
             uint classLength = 0;
 
             // TODO: refactor later
-            foreach (var varDeclContext in context.varDecl())
+            foreach (var VarDefContext in context.varDef())
             {
-                var typeName = varDeclContext.typeReference().GetText();
+                var typeName = VarDefContext.typeReference().GetText();
                 var type = DatSymbolTypeFromString(typeName);
 
-                for (int i = 0; i < varDeclContext.ChildCount; i++)
+                for (int i = 0; i < VarDefContext.ChildCount; i++)
                 {
-                    var varContext = varDeclContext.GetChild(i);
+                    var varContext = VarDefContext.GetChild(i);
 
                     if (varContext is TerminalNodeImpl)
                         continue; // skips ',' 
 
-                    if (varContext is DaedalusParser.VarValueDeclContext varValueContext)
+                    if (varContext is DaedalusParser.VarValueDefContext varValueContext)
                     {
                         var name = varValueContext.nameNode().GetText();
                         var location = GetLocation(context);
@@ -334,7 +366,7 @@ namespace DaedalusCompiler.Compilation
                         classLength++;
                     }
 
-                    if (varContext is DaedalusParser.VarArrayDeclContext varArrayContext)
+                    if (varContext is DaedalusParser.VarArrayDefContext varArrayContext)
                     {
                         var name = varArrayContext.nameNode().GetText();
                         var location = GetLocation(context);

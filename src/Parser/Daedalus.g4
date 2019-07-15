@@ -44,16 +44,16 @@ fragment Exponent : [eE] [+-]? Digit+;
 //parser
 daedalusFile:  (blockDef | inlineDef)*? EOF;
 blockDef : (functionDef  | classDef | prototypeDef | instanceDef)';'?;
-inlineDef :  (constDef | varDecl | instanceDecl )';';
+inlineDef :  (constDef | varDef | instanceDecl )';';
 
 
 functionDef: Func typeReference nameNode parameterList statementBlock;
 constDef: Const typeReference (constValueDef | constArrayDef) (',' (constValueDef | constArrayDef) )*;
-classDef: Class nameNode '{' ( varDecl ';' )*? '}';
+classDef: Class nameNode '{' ( varDef ';' )*? '}';
 prototypeDef: Prototype nameNode '(' parentReference ')' statementBlock;
 instanceDef: Instance nameNode '(' parentReference ')' statementBlock;
 instanceDecl: Instance nameNode ( ',' nameNode )*? '(' parentReference ')';
-varDecl: Var typeReference (varValueDecl | varArrayDecl) (',' (varValueDecl | varArrayDecl) )* ;
+varDef: Var typeReference (varValueDef | varArrayDef) (',' (varValueDef | varArrayDef) )* ;
 
 constArrayDef: nameNode '[' arraySize ']' constArrayAssignment;
 constArrayAssignment: '=' '{' ( expressionBlock (',' expressionBlock)*? ) '}';
@@ -61,13 +61,13 @@ constArrayAssignment: '=' '{' ( expressionBlock (',' expressionBlock)*? ) '}';
 constValueDef: nameNode constValueAssignment;
 constValueAssignment: '=' expressionBlock;
 
-varArrayDecl: nameNode '[' arraySize ']';
-varValueDecl: nameNode;
+varArrayDef: nameNode '[' arraySize ']' constArrayAssignment?;
+varValueDef: nameNode constValueAssignment?;
 
 parameterList: '(' (parameterDecl (',' parameterDecl)*? )? ')';
 parameterDecl: Var typeReference nameNode ('[' arraySize ']')?;
 statementBlock: '{' ( ( (statement ';')  | ( (ifBlockStatement | whileStatement) ';'? ) ) )*? '}';
-statement: assignment | returnStatement | constDef | varDecl | funcCall | breakStatement | continueStatement | expressionBlock;
+statement: assignment | returnStatement | constDef | varDef | funcCall | breakStatement | continueStatement | expressionBlock;
 funcCall: nameNode '(' ( funcArgExpression ( ',' funcArgExpression )*? )? ')';
 assignment: reference assignmentOperator expressionBlock;
 ifCondition: expressionBlock;
