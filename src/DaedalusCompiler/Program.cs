@@ -1,34 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using DaedalusCompiler.Dat;
 using DaedalusCompiler.Compilation;
 using System.Diagnostics;
-using System.IO;
 using DaedalusCompiler.Compilation.SemanticAnalysis;
+using DaedalusTranspiler.Transpilation;
 
 namespace DaedalusCompiler
 {
     class Program
     {
-        private const string version = "0.7.0";
-        private const string compiler_name = "daedalus-compiler";
+        private const string Version = "0.7.0";
+        private const string CompilerName = "daedalus-compiler";
 
         static void ShowHelp()
         {
-            Console.WriteLine("Daedalus Compiler Version {0}", version);
+            Console.WriteLine("Daedalus Compiler Version {0}", Version);
             Console.WriteLine(
-                "usage: {0} file_path [<args>]", compiler_name
+                "usage: {0} src_file_path [<args>]", CompilerName
             );
             Console.WriteLine(
                 "Args description:\n" +
-                "--load-dat          loads Gothic DAT file and analyzes it, in that case file_path should be DAT file\n" +
-                "--get-assembly      compile code to readable assembly\n" +
-                "--gen-ou            generate output units files (ou.cls and ou.bin)\n" +
-                "--strict            use more strict syntax version\n" +
-                "--suppress          suppress warnings globally\n" +
-                "--version           displays version of compiler\n" +
-                "-r|--runtime <path> (optional) custom externals file\n" +
-                "-o|--output <path>  (optional) output .DAT file\n" +
+                "--suppress              suppress warnings globally\n" +
+                "-g|--gen-ou             generate output units files (ou.cls and ou.bin)\n" +
+                "-s|--strict             use more strict syntax version\n" +
+                "-d|--detect-unused      enables unused symbol warnings\n" +
+                "-c|--case-sensitive     enables case sensitive mode\n" +
+                "-v|--version            displays version of compiler\n" +
+                "-r|--runtime <path>     (optional) custom externals file\n" +
+                "-o|--output <path>      (optional) output path (compiler: .DAT file, transpiler: directory)\n" +
+                "-t|--transpile          run transpilation instead of compilation\n" +
                 "--verbose"
             );
         }
@@ -43,22 +43,24 @@ namespace DaedalusCompiler
             bool suppressModeOn = false;
             bool detectUnused = false;
             bool caseSensitiveCode = false;
+            bool transpile = false;
             string filePath = String.Empty;
             string runtimePath = String.Empty;
             string outputPath = String.Empty;
             HashSet<string> suppressCodes = new HashSet<string>();
 
-            var optionSet = new NDesk.Options.OptionSet () {
+            var optionSet = new NDesk.Options.OptionSet {
                 { "h|?|help",   v => loadHelp = true },
-                { "gen-ou", v => generateOutputUnits = true },
-                { "verbose", v => verbose = true },
-                { "strict", v => strict = true },
-                { "detect-unused", v => detectUnused = true },
-                { "case-sensitive-code", v => caseSensitiveCode = true },
                 { "suppress", v => suppressModeOn = true },
-                { "version|v", v => getVersion = true  },
+                { "g|gen-ou", v => generateOutputUnits = true },
+                { "s|strict", v => strict = true },
+                { "d|detect-unused", v => detectUnused = true },
+                { "c|case-sensitive", v => caseSensitiveCode = true },
+                { "v|version", v => getVersion = true  },
                 { "r|runtime=", v => runtimePath = v},
                 { "o|output=", v => outputPath = v},
+                { "t|transpile", v => transpile = true},
+                { "verbose", v => verbose = true },
                 { "<>", v =>
                     {
                         if (suppressModeOn)
@@ -94,7 +96,7 @@ namespace DaedalusCompiler
 
             if (getVersion)
             {
-                Console.WriteLine($"v{version}");
+                Console.WriteLine($"v{Version}");
                 return;
             }
 
@@ -104,7 +106,15 @@ namespace DaedalusCompiler
             }
             else
             {
-                CompileDaedalus(filePath, runtimePath, outputPath, verbose, generateOutputUnits, strict, suppressCodes);
+                if (transpile)
+                {
+                    TranspileDaedalus(filePath, runtimePath, outputPath, verbose, generateOutputUnits, strict, suppressCodes);
+                }
+                else
+                {
+                    CompileDaedalus(filePath, runtimePath, outputPath, verbose, generateOutputUnits, strict, suppressCodes);
+                }
+                
             }
         }
         
@@ -125,6 +135,23 @@ namespace DaedalusCompiler
             }
         }
 
+        static void TranspileDaedalus(string path, string runtimePath, string outputPath, bool verbose, bool generateOutputUnits, bool strictSyntax, HashSet<string> suppressCodes)
+        {
+            var compiler = new Transpiler("output", strictSyntax, suppressCodes);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            bool transpiledSuccessfully = compiler.TranspileFromSrc(path, runtimePath, outputPath, verbose, generateOutputUnits);
+            if (transpiledSuccessfully)
+            {
+                Console.WriteLine($"Transpilation completed successfully. Total time: {stopwatch.Elapsed}");
+            }
+            else
+            {
+                Console.WriteLine($"Transpilation FAILED. Total time: {stopwatch.Elapsed}");
+                Environment.Exit(1);
+            }
+        }
+        
         static void Main(string[] args)
         {
             HandleOptionsParser(args);

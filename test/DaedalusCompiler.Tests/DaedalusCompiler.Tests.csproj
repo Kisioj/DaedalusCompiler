@@ -14,4 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DaedalusCompiler\DaedalusCompiler.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Scripts\Content" />
+  </ItemGroup>
 </Project>

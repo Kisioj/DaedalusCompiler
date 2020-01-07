@@ -1,6 +1,4 @@
 ﻿
-using DaedalusCompiler.Compilation.SemanticAnalysis;
-using DaedalusCompiler.Dat;
 
 
 /*
@@ -11,7 +9,7 @@ using DaedalusCompiler.Dat;
  */
 
 
-namespace DaedalusCompiler.Compilation
+namespace DaedalusCompiler.Compilation.SemanticAnalysis
 {
     public class Data
     {

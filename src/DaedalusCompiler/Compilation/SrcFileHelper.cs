@@ -35,18 +35,11 @@ namespace DaedalusCompiler.Compilation
                 throw new Exception($"Cyclic dependency detected. SRC file '{srcFilePath}' is already loaded");
             
             alreadyLoadedFiles.Add(srcFilePath.ToLower());
-
-            try
-            {
-                var lines = GetLines(srcFilePath);
-                var basePath = Path.GetDirectoryName(srcFilePath);
-                var result = LoadScriptsFilePaths(basePath, lines, alreadyLoadedFiles);
-                return result;
-            }
-            catch (Exception exc)
-            {
-                throw new Exception($"Error while loading scripts file paths from SRC file '{srcFilePath}'", exc);
-            }
+            
+            var lines = GetLines(srcFilePath);
+            var basePath = Path.GetDirectoryName(srcFilePath);
+            var result = LoadScriptsFilePaths(basePath, lines, alreadyLoadedFiles);
+            return result;
         }
         
         private static string GetDirPathInsensitive(string basePath, string relativePath)

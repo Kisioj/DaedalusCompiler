@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using DaedalusCompiler.Compilation.SemanticAnalysis;
 
 namespace DaedalusCompiler.Compilation
@@ -45,6 +46,19 @@ public class SemanticErrorsCollectingVisitor : AbstractSyntaxTreeBaseVisitor
             FilePathDisplayStatus = FilePathDisplayStatus.DisplayOncePerFile;
         }
 
+        public static HashSet<string> GetWarningCodesToSuppress(string line)
+        {
+            string ws = @"(?:[ \t])*";
+            string newline = @"(?:\r\n?|\n)";
+            RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.Multiline;
+            string suppressWarningsPattern = $@"//!{ws}suppress{ws}:((?:{ws}[a-zA-Z0-9]+)+){ws}{newline}?$";
+            MatchCollection matches = Regex.Matches(line, suppressWarningsPattern, options);
+            foreach (Match match in matches)
+            {
+                return match.Groups[1].Value.Split(" ").Where(s => !s.Equals(String.Empty)).ToHashSet();
+            }
+            return new HashSet<string>();
+        }
 
         public override void VisitTree(AbstractSyntaxTree tree)
         {
@@ -85,7 +99,7 @@ public class SemanticErrorsCollectingVisitor : AbstractSyntaxTreeBaseVisitor
             {
                 int fileIndex = node.Location.FileIndex;
                 string line = _filesContents[fileIndex][node.Location.Line - 1];
-                HashSet<string> suppressedLineWarningCodes = Compiler.GetWarningCodesToSuppress(line);
+                HashSet<string> suppressedLineWarningCodes = GetWarningCodesToSuppress(line);
                 HashSet<string> suppressedFileWarningCodes = _suppressedWarningCodes[fileIndex];
                 
                 HashSet<string> suppressedWarningCodes = suppressedLineWarningCodes.Union(suppressedFileWarningCodes).ToHashSet();

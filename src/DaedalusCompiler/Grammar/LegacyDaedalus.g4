@@ -1,4 +1,4 @@
-grammar Daedalus;
+grammar LegacyDaedalus;
 
 // lexer
 Const : 'const' | 'CONST';
@@ -28,8 +28,8 @@ StringLiteral : '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 
 Whitespace : [ \t]+ -> skip;
 Newline : ('\r''\n'?| '\n') -> skip;
-BlockComment :   '/*' .*? '*/' -> skip;
-LineComment :   '//' ~[\r\n]* -> skip ;
+BlockComment :   '/*' .*? '*/' -> channel(HIDDEN);
+LineComment :   '//' ~[\r\n]* -> channel(HIDDEN);
 
 // fragments
 fragment IdStart : GermanCharacter | [a-zA-Z_];

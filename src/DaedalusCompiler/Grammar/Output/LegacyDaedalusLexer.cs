@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from Daedalus.g4 by ANTLR 4.7.2
+// Generated from LegacyDaedalus.g4 by ANTLR 4.7.2
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -29,7 +29,7 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.7.2")]
 [System.CLSCompliant(false)]
-public partial class DaedalusLexer : Lexer {
+public partial class LegacyDaedalusLexer : Lexer {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
@@ -64,10 +64,10 @@ public partial class DaedalusLexer : Lexer {
 	};
 
 
-	public DaedalusLexer(ICharStream input)
+	public LegacyDaedalusLexer(ICharStream input)
 	: this(input, Console.Out, Console.Error) { }
 
-	public DaedalusLexer(ICharStream input, TextWriter output, TextWriter errorOutput)
+	public LegacyDaedalusLexer(ICharStream input, TextWriter output, TextWriter errorOutput)
 	: base(input, output, errorOutput)
 	{
 		Interpreter = new LexerATNSimulator(this, _ATN, decisionToDFA, sharedContextCache);
@@ -101,7 +101,7 @@ public partial class DaedalusLexer : Lexer {
 		}
 	}
 
-	public override string GrammarFileName { get { return "Daedalus.g4"; } }
+	public override string GrammarFileName { get { return "LegacyDaedalus.g4"; } }
 
 	public override string[] RuleNames { get { return ruleNames; } }
 
@@ -111,7 +111,7 @@ public partial class DaedalusLexer : Lexer {
 
 	public override string SerializedAtn { get { return new string(_serializedATN); } }
 
-	static DaedalusLexer() {
+	static LegacyDaedalusLexer() {
 		decisionToDFA = new DFA[_ATN.NumberOfDecisions];
 		for (int i = 0; i < _ATN.NumberOfDecisions; i++) {
 			decisionToDFA[i] = new DFA(_ATN.GetDecisionState(i), i);
@@ -543,7 +543,7 @@ public partial class DaedalusLexer : Lexer {
 		'\x2', '\x1E6', '\x1E8', '\x3', '\x2', '\x2', '\x2', '\x1E7', '\x1E5', 
 		'\x3', '\x2', '\x2', '\x2', '\x1E8', '\x1E9', '\a', ',', '\x2', '\x2', 
 		'\x1E9', '\x1EA', '\a', '\x31', '\x2', '\x2', '\x1EA', '\x1EB', '\x3', 
-		'\x2', '\x2', '\x2', '\x1EB', '\x1EC', '\b', '<', '\x2', '\x2', '\x1EC', 
+		'\x2', '\x2', '\x2', '\x1EB', '\x1EC', '\b', '<', '\x3', '\x2', '\x1EC', 
 		'x', '\x3', '\x2', '\x2', '\x2', '\x1ED', '\x1EE', '\a', '\x31', '\x2', 
 		'\x2', '\x1EE', '\x1EF', '\a', '\x31', '\x2', '\x2', '\x1EF', '\x1F3', 
 		'\x3', '\x2', '\x2', '\x2', '\x1F0', '\x1F2', '\n', '\x4', '\x2', '\x2', 
@@ -551,7 +551,7 @@ public partial class DaedalusLexer : Lexer {
 		'\x2', '\x2', '\x2', '\x1F3', '\x1F1', '\x3', '\x2', '\x2', '\x2', '\x1F3', 
 		'\x1F4', '\x3', '\x2', '\x2', '\x2', '\x1F4', '\x1F6', '\x3', '\x2', '\x2', 
 		'\x2', '\x1F5', '\x1F3', '\x3', '\x2', '\x2', '\x2', '\x1F6', '\x1F7', 
-		'\b', '=', '\x2', '\x2', '\x1F7', 'z', '\x3', '\x2', '\x2', '\x2', '\x1F8', 
+		'\b', '=', '\x3', '\x2', '\x1F7', 'z', '\x3', '\x2', '\x2', '\x2', '\x1F8', 
 		'\x1FB', '\x5', '\x81', '\x41', '\x2', '\x1F9', '\x1FB', '\t', '\x5', 
 		'\x2', '\x2', '\x1FA', '\x1F8', '\x3', '\x2', '\x2', '\x2', '\x1FA', '\x1F9', 
 		'\x3', '\x2', '\x2', '\x2', '\x1FB', '|', '\x3', '\x2', '\x2', '\x2', 
@@ -597,7 +597,7 @@ public partial class DaedalusLexer : Lexer {
 		'\x14B', '\x15F', '\x171', '\x17F', '\x193', '\x1B5', '\x1BB', '\x1BF', 
 		'\x1C6', '\x1C8', '\x1CA', '\x1D2', '\x1D8', '\x1DB', '\x1E5', '\x1F3', 
 		'\x1FA', '\x1FF', '\x20A', '\x211', '\x216', '\x21A', '\x21F', '\x222', 
-		'\x228', '\x22D', '\x3', '\b', '\x2', '\x2',
+		'\x228', '\x22D', '\x4', '\b', '\x2', '\x2', '\x2', '\x3', '\x2',
 	};
 
 	public static readonly ATN _ATN =

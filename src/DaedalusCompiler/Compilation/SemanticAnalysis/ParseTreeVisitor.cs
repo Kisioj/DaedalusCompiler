@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
@@ -13,14 +14,31 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
 	    public readonly List<ReferenceNode> ReferenceNodes;
 	    private readonly List<ConstDefinitionNode> _constDefinitionNodes;
 	    private readonly List<IArrayDeclarationNode> _arrayDeclarationNodes;
+	    private readonly CommonTokenStream _tokenStream;
 
-	    public ParseTreeVisitor(int sourceFileNumber)
+	    public ParseTreeVisitor(CommonTokenStream tokenStream, int sourceFileNumber)
 	    {
+		    _tokenStream = tokenStream;
 		    _sourceFileNumber = sourceFileNumber;
 		    _constDefinitionNodes = new List<ConstDefinitionNode>();
 		    _arrayDeclarationNodes = new List<IArrayDeclarationNode>();
 		    _inheritanceReferenceNodes = new List<InheritanceParentReferenceNode>();
 		    ReferenceNodes = new List<ReferenceNode>();
+	    }
+
+	    private List<CommentNode> GetCommentNodesToRight(ParserRuleContext context)
+	    {
+		    List<CommentNode> commentNodes = new List<CommentNode>();
+		    IList<IToken> tokens = _tokenStream.GetHiddenTokensToRight(context.Stop.TokenIndex);
+		    if (tokens != null)
+		    {
+			    foreach (IToken token in tokens)
+			    {
+				    commentNodes.Add(new CommentNode(GetLocation((CommonToken)token), token.Text));
+			    }
+		    }
+		    return commentNodes;
+		    //List<CommentNode> commentNodes = GetCommentNodesToRight((ParserRuleContext) context.Parent);
 	    }
 
 	    public override ASTNode VisitDaedalusFile([NotNull] DaedalusParser.DaedalusFileContext context)
@@ -171,7 +189,6 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
 			{
 				expressionNodes.Add((ExpressionNode) Visit(expressionContext));
 			}
-
 			return new FunctionCallNode(GetLocation(context), referenceNode, expressionNodes);
 
 		}
@@ -641,7 +658,21 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
 				LinesCount = context.Stop.Line - context.Start.Line + 1,
 				CharsCount = context.Stop.StopIndex - context.Start.StartIndex + 1,
 			
-				EndColumn = context.Stop.StopIndex,
+				EndColumn = context.Stop.StopIndex, // TODO it will not work correctly if Stop token is multiline token
+			};
+		}
+		
+		private NodeLocation GetLocation(CommonToken token)
+		{
+			return new NodeLocation // TODO check if we need anything other than Line here
+			{
+				// FileIndex = _sourceFileNumber,
+				Line = token.Line,
+				// Column = token.Column,
+				// Index = token.StartIndex,
+				// LinesCount = Regex.Matches(token.Text, Environment.NewLine).Count + 1,
+				// CharsCount = token.StopIndex - token.StartIndex + 1,
+				// EndColumn = token.StopIndex,
 			};
 		}
     }

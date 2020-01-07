@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using DaedalusCompiler.Compilation;
 using DaedalusCompiler.Compilation.SemanticAnalysis;
@@ -31,6 +32,7 @@ namespace DaedalusCompiler.Tests
             List<IParseTree> parseTrees = new List<IParseTree>();
             List<string> filesPaths = new List<string>();
             List<string[]> filesContents = new List<string[]>();
+            List<CommonTokenStream> tokenStreams = new List<CommonTokenStream>();
             List<HashSet<string>> suppressedWarningCodes = new List<HashSet<string>>();
 
             _syntaxErrorsCount = 0;
@@ -41,6 +43,7 @@ namespace DaedalusCompiler.Tests
                 SyntaxErrorListener syntaxErrorListener = new SyntaxErrorListener();
                 parser.AddErrorListener(syntaxErrorListener);
                 parseTrees.Add(parser.daedalusFile());
+                tokenStreams.Add((CommonTokenStream) parser.TokenStream);
                 
                 string[] fileContentLines = code.Split(Environment.NewLine);
                 filesPaths.Add("test.d");
@@ -57,7 +60,7 @@ namespace DaedalusCompiler.Tests
                 return;
             }
 
-            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(parseTrees, filesPaths, filesContents, suppressedWarningCodes);
+            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(parseTrees, tokenStreams, filesPaths, filesContents, suppressedWarningCodes);
             semanticAnalyzer.Run();
             SymbolTable = semanticAnalyzer.SymbolTable;
             

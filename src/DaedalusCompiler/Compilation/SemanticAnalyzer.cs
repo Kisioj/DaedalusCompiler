@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using DaedalusCompiler.Compilation.SemanticAnalysis;
 
@@ -12,14 +13,14 @@ namespace DaedalusCompiler.Compilation
         public Dictionary<string, Symbol> SymbolTable;
         public List<BlockSymbol> SymbolsWithInstructions;
         
-        public SemanticAnalyzer(List<IParseTree> parseTrees, List<string> filesPaths, List<string[]> filesContents, List<HashSet<string>> suppressedWarningCodes)
+        public SemanticAnalyzer(List<IParseTree> parseTrees, List<CommonTokenStream> tokenStreams, List<string> filesPaths, List<string[]> filesContents, List<HashSet<string>> suppressedWarningCodes)
         {
             SymbolTable = null;
             SymbolsWithInstructions = null;
 
             Stopwatch timer = new Stopwatch();
             timer.Start();
-            AbstractSyntaxTree = new AbstractSyntaxTree(parseTrees, filesPaths, filesContents, suppressedWarningCodes);
+            AbstractSyntaxTree = new AbstractSyntaxTree(parseTrees, tokenStreams, filesPaths, filesContents, suppressedWarningCodes);
             timer.Stop();
             Console.WriteLine($"AbstractSyntaxTree creation time: {timer.Elapsed}");
         }

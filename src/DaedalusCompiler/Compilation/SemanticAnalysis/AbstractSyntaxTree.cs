@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
 namespace DaedalusCompiler.Compilation.SemanticAnalysis
@@ -75,7 +76,7 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
         public readonly List<string[]> FilesContents;
         public readonly List<HashSet<string>> SuppressedWarningCodes;
         
-        public AbstractSyntaxTree(List<IParseTree> parseTrees, List<string> filesPaths, List<string[]> filesContents, List<HashSet<string>> suppressedWarningCodes)
+        public AbstractSyntaxTree(List<IParseTree> parseTrees, List<CommonTokenStream> tokenStreams, List<string> filesPaths, List<string[]> filesContents, List<HashSet<string>> suppressedWarningCodes)
         {
             RootNodes = new List<FileNode>();
             ReferenceNodes = new List<ReferenceNode>();
@@ -87,7 +88,7 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
             int index = 0;
             foreach (IParseTree parseTree in parseTrees)
             {
-                ParseTreeVisitor visitor = new ParseTreeVisitor(index);
+                ParseTreeVisitor visitor = new ParseTreeVisitor(tokenStreams[index], index);
                 RootNodes.Add((FileNode) visitor.Visit(parseTree));
                 ReferenceNodes.AddRange(visitor.ReferenceNodes);
                 index++;
@@ -640,6 +641,16 @@ namespace DaedalusCompiler.Compilation.SemanticAnalysis
         public StringConstSymbol Symbol; //filled in SymbolTableCreationVisitor
 
         public StringLiteralNode(NodeLocation location, string value) : base(location)
+        {
+            Value = value;
+        }
+    }
+    
+    public class CommentNode : ASTNode
+    {
+        public readonly string Value;
+
+        public CommentNode(NodeLocation location, string value) : base(location)
         {
             Value = value;
         }
